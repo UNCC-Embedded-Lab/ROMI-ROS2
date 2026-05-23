@@ -41,6 +41,57 @@ Robot visualization (description + RViz):
 ros2 launch romi_base romi_rviz.launch.py
 ```
 
+## Raspberry Pi Build Notes
+
+If you copy this workspace from another machine, do not reuse `build/`, `install/`, or `log/` on the Pi. Colcon and CMake cache absolute paths, so a build generated under `/root/ros2_ws` will fail when reused under `/home/student/ros2_ws`.
+
+Clean the Pi workspace before rebuilding:
+
+```bash
+cd ~/ros2_ws
+rm -rf build install log
+source /opt/ros/<rosdistro>/setup.bash
+colcon build --symlink-install
+source install/setup.bash
+```
+
+If you sync with `rsync`, note that excluded directories are not deleted on the target. This command leaves any old `build/`, `install/`, and `log/` trees in place on the Pi:
+
+```bash
+rsync -avz --delete --exclude='*/build/' --exclude='*/install/' --exclude='*/log/' ~/ros2_ws/ student@<pi-host>:~/ros2_ws/
+```
+
+Use one of these approaches instead:
+
+```bash
+ssh student@<pi-host> 'rm -rf ~/ros2_ws/build ~/ros2_ws/install ~/ros2_ws/log'
+rsync -avz --delete ~/ros2_ws/src/ROMI-ROS2/ student@<pi-host>:~/ros2_ws/src/ROMI-ROS2/
+```
+
+Or, if you prefer syncing the whole workspace:
+
+```bash
+ssh student@<pi-host> 'rm -rf ~/ros2_ws/build ~/ros2_ws/install ~/ros2_ws/log'
+rsync -avz --delete --exclude='build/' --exclude='install/' --exclude='log/' ~/ros2_ws/ student@<pi-host>:~/ros2_ws/
+```
+
+If `rsync` exits with code `127`, install `rsync` on the machine that reported the error before retrying.
+
+This repository also includes a helper script for the safe sync flow:
+
+```bash
+cd ~/ros2_ws/src/ROMI-ROS2
+./scripts/sync_to_pi.sh
+```
+
+By default it:
+
+- syncs only `src/ROMI-ROS2` to `student@192.168.4.1:~/ros2_ws`
+- deletes stale `build/`, `install/`, and `log/` on the Pi
+- rebuilds `romi_base` on the Pi and validates Python package metadata (`romi-base`)
+
+Use `--full` to sync the whole workspace, `--all-packages` to build all packages, `--ros-distro <name>` to set the Pi ROS distro, or `--no-build` to sync only.
+
 ## Main arguments
 
 - `mode`: `none`, `keyboard_teleop`, or `obstacle_avoidance`
