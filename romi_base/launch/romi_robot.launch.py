@@ -12,8 +12,11 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     romi_pkg_share = get_package_share_directory('romi_base')
+    gazebo_pkg_share = get_package_share_directory('gazebo_ros')
 
     params_file = LaunchConfiguration('params_file')
+    use_gazebo = LaunchConfiguration('use_gazebo')
+    gazebo_world = LaunchConfiguration('gazebo_world')
     use_lidar = LaunchConfiguration('use_lidar')
     use_description = LaunchConfiguration('use_description')
     use_rviz = LaunchConfiguration('use_rviz')
@@ -28,6 +31,16 @@ def generate_launch_description():
             'params_file',
             default_value=f'{romi_pkg_share}/config/romi_params.yaml',
             description='Path to ROMI parameter file',
+        ),
+        DeclareLaunchArgument(
+            'use_gazebo',
+            default_value='false',
+            description='Run in Gazebo simulation instead of hardware bringup',
+        ),
+        DeclareLaunchArgument(
+            'gazebo_world',
+            default_value=f'{gazebo_pkg_share}/worlds/empty.world',
+            description='World file for Gazebo when use_gazebo=true',
         ),
         DeclareLaunchArgument(
             'use_lidar',
@@ -74,6 +87,7 @@ def generate_launch_description():
             executable='astar_bridge',
             name='astar_bridge_node',
             parameters=[params_file],
+            condition=IfCondition(PythonExpression(["'", use_gazebo, "' != 'true'"])),
             output='screen',
         ),
         Node(
@@ -81,6 +95,7 @@ def generate_launch_description():
             executable='base_controller',
             name='base_controller_node',
             parameters=[params_file],
+            condition=IfCondition(PythonExpression(["'", use_gazebo, "' != 'true'"])),
             output='screen',
         ),
         Node(
@@ -100,7 +115,7 @@ def generate_launch_description():
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_description.launch.py'),
-            condition=IfCondition(PythonExpression(["'", use_description, "' == 'true' and '", use_rviz, "' != 'true'"])),
+            condition=IfCondition(PythonExpression(["'", use_description, "' == 'true' and '", use_rviz, "' != 'true' and '", use_gazebo, "' != 'true'"])),
             launch_arguments={
                 'use_simulation': use_simulation,
                 'use_joint_state_publisher': use_joint_state_publisher,
@@ -108,10 +123,20 @@ def generate_launch_description():
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_rviz.launch.py'),
-            condition=IfCondition(use_rviz),
+            condition=IfCondition(PythonExpression(["'", use_rviz, "' == 'true' and '", use_gazebo, "' != 'true'"])),
             launch_arguments={
                 'use_simulation': use_simulation,
                 'use_joint_state_publisher': use_joint_state_publisher,
+            }.items(),
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_gazebo.launch.py'),
+            condition=IfCondition(use_gazebo),
+            launch_arguments={
+                'world': gazebo_world,
+                'mode': mode,
+                'use_rviz': use_rviz,
+                'rviz_config': f'{romi_pkg_share}/rviz/romi_base.rviz',
             }.items(),
         ),
         IncludeLaunchDescription(
@@ -122,7 +147,7 @@ def generate_launch_description():
                     'rplidar_a1_launch.py',
                 ])
             ),
-            condition=IfCondition(use_lidar),
+            condition=IfCondition(PythonExpression(["'", use_lidar, "' == 'true' and '", use_gazebo, "' != 'true'"])),
             launch_arguments={
                 'serial_port': lidar_serial_port,
                 'frame_id': lidar_frame_id,

@@ -57,6 +57,10 @@ Step 1 is only needed for students using personal Romi kits. Lab-provided robots
 
 ### Step 2: Raspberry Pi image
 
+Use this link for the class image download:
+
+- Google Drive image link: REPLACE_WITH_GOOGLE_DRIVE_URL
+
 1. Download the class Pi image.
 2. Install Raspberry Pi Imager.
 3. Insert microSD card.
@@ -156,6 +160,18 @@ Robot visualization (description + RViz):
 ros2 launch romi_base romi_rviz.launch.py
 ```
 
+Gazebo simulation:
+
+```bash
+ros2 launch romi_base romi_gazebo.launch.py mode:=keyboard_teleop
+```
+
+Sim from main robot launch (disables hardware/i2c stack):
+
+```bash
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=keyboard_teleop use_rviz:=true
+```
+
 ## Raspberry Pi Build Notes
 
 If you copy this workspace from another machine, do not reuse `build/`, `install/`, or `log/` on the Pi. Colcon and CMake cache absolute paths, so a build generated under `/root/ros2_ws` will fail when reused under `/home/student/ros2_ws`.
@@ -214,6 +230,8 @@ Use `--full` to sync the whole workspace, `--all-packages` to build all packages
 - `lidar_serial_port`: default `/dev/ttyUSB0`
 - `lidar_frame_id`: default `laser`
 - `params_file`: defaults to `config/romi_params.yaml`
+- `use_gazebo`: run Gazebo simulation instead of hardware stack
+- `gazebo_world`: Gazebo world file used when `use_gazebo:=true`
 - `use_description`: launch robot_state_publisher description stack
 - `use_rviz`: launch RViz visualization stack
 - `use_simulation`: pass xacro simulation toggle to the description

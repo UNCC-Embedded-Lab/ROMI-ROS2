@@ -36,9 +36,12 @@
                     <max>15</max>
                 </range>
             </ray>
-            <plugin name="laser_controller" filename="libgazebo_ros_laser.so">
-                <topicName>/LiDAR/LD19</topicName>
-                <frameName>lidar_frame</frameName>
+            <plugin name="laser_controller" filename="libgazebo_ros_ray_sensor.so">
+                <ros>
+                    <remapping>~/out:=/scan</remapping>
+                </ros>
+                <output_type>sensor_msgs/LaserScan</output_type>
+                <frame_name>lidar_frame</frame_name>
             </plugin>
         </sensor>
     </gazebo>
