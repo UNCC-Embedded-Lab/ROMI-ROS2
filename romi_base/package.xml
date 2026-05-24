@@ -24,6 +24,7 @@
   <depend>xacro</depend>
   <depend>robot_state_publisher</depend>
   <depend>joint_state_publisher</depend>
+  <depend>teleop_twist_keyboard</depend>
   <depend>rviz2</depend>
   <depend>ros_gz_sim</depend>
   <depend>ros_gz_bridge</depend>

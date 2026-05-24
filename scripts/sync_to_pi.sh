@@ -117,12 +117,18 @@ if [[ "$SYNC_MODE" == "full" ]]; then
     --exclude='build/' \
     --exclude='install/' \
     --exclude='log/' \
+    --exclude='.vscode/' \
+    --exclude='.devcontainer/' \
+    --exclude='.docker/' \
     --exclude='.git/' \
     "${LOCAL_WS_CLEAN}/" "$REMOTE:${REMOTE_WS_CLEAN}/"
 else
   # Default mode syncs only source code to minimize transfer time and risk.
   echo "Syncing src/ROMI-ROS2 to ${REMOTE}:${REMOTE_WS_CLEAN}/src/ROMI-ROS2"
   rsync -avz --delete \
+    --exclude='.vscode/' \
+    --exclude='.devcontainer/' \
+    --exclude='.docker/' \
     --exclude='.git/' \
     "${LOCAL_WS_CLEAN}/src/ROMI-ROS2/" "$REMOTE:${REMOTE_WS_CLEAN}/src/ROMI-ROS2/"
 fi
@@ -139,6 +145,10 @@ if [[ "$RUN_REMOTE_BUILD" == "true" ]]; then
 set -euo pipefail
 
 cd "$REMOTE_WS_CLEAN"
+
+# ROS setup scripts can reference optional vars that are unset under nounset.
+# Temporarily disable nounset while sourcing them.
+set +u
 source "/opt/ros/${ROS_DISTRO_NAME}/setup.bash"
 
 # Build only romi_base by default for a faster, deterministic validation pass.
@@ -150,7 +160,22 @@ fi
 
 # Validate that Python package metadata exists so ros2 launch entry points resolve.
 source install/setup.bash
+set -u
 python3 -c "import importlib.metadata as m; m.distribution('romi-base'); print('romi-base metadata OK')"
+
+# Surface optional runtime tools without blocking offline hardware deploys.
+if ! command -v xacro >/dev/null 2>&1; then
+  echo "WARNING: xacro is missing on the Pi." >&2
+  echo "  Description/RViz launches will fail until it is installed:" >&2
+  echo "  sudo apt-get update && sudo apt-get install -y ros-${ROS_DISTRO_NAME}-xacro" >&2
+  echo "  Hardware bringup can still run with: ros2 launch romi_base romi_core.launch.py use_description:=false use_rviz:=false" >&2
+fi
+
+if ! ros2 pkg prefix teleop_twist_keyboard >/dev/null 2>&1; then
+  echo "WARNING: teleop_twist_keyboard is missing on the Pi." >&2
+  echo "  Keyboard teleop launch mode will be unavailable until it is installed:" >&2
+  echo "  sudo apt-get update && sudo apt-get install -y ros-${ROS_DISTRO_NAME}-teleop-twist-keyboard" >&2
+fi
 EOF
 
   echo "Remote build complete and romi-base metadata is present."

@@ -4,7 +4,7 @@ This package provides a beginner-friendly runtime stack for a Pololu ROMI robot 
 
 - `astar_bridge`: hardware bridge to the AStar motor controller
 - `base_controller`: combined kinematics + PI wheel control + odometry + TF
-- `keyboard_teleop`: keyboard command source (`/cmd_vel`)
+- `teleop_twist_keyboard`: keyboard command source (`/cmd_vel`)
 - `obstacle_avoidance`: reactive obstacle avoidance using `/scan` from RPLidar
 
 ## System Overview
@@ -24,7 +24,7 @@ This package provides a beginner-friendly runtime stack for a Pololu ROMI robot 
   - ROS 2 (Humble or compatible distro)
   - `colcon` build tools
   - `git`, `ssh`, and `rsync`
-  - Optional: Gazebo and RViz for simulation/visualization
+  - Optional: Gazebo Sim (`ros_gz`) and RViz for simulation/visualization
 
 ## 1) Configure Robot Hardware
 
@@ -108,16 +108,29 @@ source install/setup.bash
 
 ## 5) Launch Examples
 
+If launching on a physical Pi and you want robot description or RViz on the Pi itself, install:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ros-humble-xacro ros-humble-teleop-twist-keyboard
+```
+
+If the Pi is offline, hardware control can still run without `xacro` by skipping description/RViz:
+
+```bash
+ros2 launch romi_base romi_core.launch.py use_description:=false use_rviz:=false
+```
+
 Base robot stack only:
 
 ```bash
 ros2 launch romi_base romi_core.launch.py
 ```
 
-Robot bringup with keyboard teleop and lidar:
+Robot bringup with keyboard teleop (`teleop_twist_keyboard`) and lidar:
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py mode:=keyboard_teleop use_lidar:=true
+ros2 launch romi_base romi_robot.launch.py mode:=teleop_twist_keyboard use_lidar:=true
 ```
 
 Obstacle avoidance mode:
@@ -138,10 +151,18 @@ Description + RViz:
 ros2 launch romi_base romi_rviz.launch.py
 ```
 
-Gazebo simulation:
+Gazebo Sim (modern `ros_gz`) through unified bringup:
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=keyboard_teleop use_rviz:=true
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=teleop_twist_keyboard use_rviz:=true
+```
+
+Note: `mode:=teleop_twist_keyboard` launches the generic ROS node from the `teleop_twist_keyboard` package.
+
+Direct Gazebo Sim launch:
+
+```bash
+ros2 launch romi_base romi_gz.launch.py mode:=teleop_twist_keyboard use_rviz:=true
 ```
 
 Modern Gazebo defaults to: `worlds/romi_simple_gz.sdf`.
@@ -150,15 +171,17 @@ To override it:
 ```bash
 ros2 launch romi_base romi_robot.launch.py \
   use_gazebo:=true \
-  mode:=keyboard_teleop \
+  mode:=teleop_twist_keyboard \
   gazebo_world:=/root/ros2_ws/src/ROMI-ROS2/romi_base/worlds/romi_simple_gz.sdf
 ```
 
 Note: `use_lidar:=true` requires `rplidar_ros` to be built and sourced.
 
+Note: This package now uses modern Gazebo Sim launch files only. The legacy Classic launch entry (`romi_gazebo.launch.py`) is intentionally removed.
+
 ## Main Launch Arguments
 
-- `mode`: `none`, `keyboard_teleop`, or `obstacle_avoidance`
+- `mode`: `none`, `teleop_twist_keyboard`, or `obstacle_avoidance`
 - `use_lidar`: `true` or `false`
 - `lidar_serial_port`: default `/dev/ttyUSB0`
 - `lidar_frame_id`: default `laser`

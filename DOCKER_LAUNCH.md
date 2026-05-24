@@ -82,7 +82,7 @@ Inside the container, run:
 ```bash
 source /opt/ros/humble/setup.bash
 apt-get update
-apt-get install -y ros-humble-gazebo-ros-pkgs ros-humble-xacro
+apt-get install -y ros-humble-ros-gz ros-humble-xacro ros-humble-teleop-twist-keyboard
 colcon build --symlink-install
 source install/setup.bash
 ```
@@ -99,7 +99,7 @@ Terminal 1 inside container (Gazebo + robot):
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_gazebo.launch.py mode:=none
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
 ```
 
 Terminal 2 inside container (interactive keyboard teleop):
@@ -108,7 +108,7 @@ Terminal 2 inside container (interactive keyboard teleop):
 docker exec -it romi_ros2 bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 run romi_base keyboard_teleop
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
 If Gazebo GUI is not required, you can run headless server only:
@@ -116,7 +116,7 @@ If Gazebo GUI is not required, you can run headless server only:
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_gazebo.launch.py mode:=none gui:=false
+ros2 launch romi_base romi_gz.launch.py mode:=none
 ```
 
 Core stack:
@@ -132,15 +132,15 @@ Gazebo simulation:
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_gazebo.launch.py mode:=none
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
 ```
 
-Full robot launch (hardware path):
+Full robot launch (hardware path + generic keyboard teleop mode):
 
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py mode:=keyboard_teleop use_lidar:=true
+ros2 launch romi_base romi_robot.launch.py mode:=teleop_twist_keyboard use_lidar:=true
 ```
 
 ## 5) Start a hardware-access container (USB/I2C)
@@ -199,7 +199,7 @@ docker rm romi_ros2
   - Run `source /opt/ros/humble/setup.bash` first.
 - Package not found at launch
   - Install missing ROS dependencies once in the container, then rebuild and source:
-    `apt-get update && apt-get install -y ros-humble-gazebo-ros-pkgs ros-humble-xacro`
+    `apt-get update && apt-get install -y ros-humble-ros-gz ros-humble-xacro ros-humble-teleop-twist-keyboard`
     `colcon build --symlink-install && source install/setup.bash`
 - ROS nodes cannot discover each other
   - Verify all machines/containers use same `ROS_DOMAIN_ID` and have reachable networking.

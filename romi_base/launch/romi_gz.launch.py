@@ -37,7 +37,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'mode',
             default_value='none',
-            description='Robot command source: none | keyboard_teleop | obstacle_avoidance',
+            description='Robot command source: none | teleop_twist_keyboard | obstacle_avoidance',
         ),
         SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
@@ -81,10 +81,10 @@ def generate_launch_description():
             output='screen',
         ),
         Node(
-            package='romi_base',
-            executable='keyboard_teleop',
-            name='keyboard_teleop_node',
-            condition=IfCondition(PythonExpression(["'", mode, "' == 'keyboard_teleop'"])),
+            package='teleop_twist_keyboard',
+            executable='teleop_twist_keyboard',
+            name='teleop_twist_keyboard',
+            condition=IfCondition(PythonExpression(["'", mode, "' == 'teleop_twist_keyboard'"])),
             output='screen',
         ),
         Node(
