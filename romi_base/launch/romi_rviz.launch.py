@@ -12,6 +12,7 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('romi_base')
 
     use_simulation = LaunchConfiguration('use_simulation')
+    use_sim_time = LaunchConfiguration('use_sim_time')
     use_joint_state_publisher = LaunchConfiguration('use_joint_state_publisher')
     rviz_config = LaunchConfiguration('rviz_config')
 
@@ -27,6 +28,11 @@ def generate_launch_description():
             description='Run joint_state_publisher for model visualization',
         ),
         DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation clock if true',
+        ),
+        DeclareLaunchArgument(
             'rviz_config',
             default_value=f'{pkg_share}/rviz/romi_base.rviz',
             description='Path to RViz config file',
@@ -36,6 +42,7 @@ def generate_launch_description():
             launch_arguments={
                 'use_simulation': use_simulation,
                 'use_joint_state_publisher': use_joint_state_publisher,
+                'use_sim_time': use_sim_time,
             }.items(),
         ),
         Node(
@@ -43,6 +50,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             arguments=['-d', rviz_config],
+            parameters=[{'use_sim_time': use_sim_time}],
             output='screen',
         ),
     ])

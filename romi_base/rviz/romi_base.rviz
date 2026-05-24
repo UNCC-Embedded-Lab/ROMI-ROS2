@@ -37,7 +37,7 @@ Visualization Manager:
       Style: Flat Squares
       Color: 0; 255; 0
   Global Options:
-    Fixed Frame: odom
+    Fixed Frame: base_link
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact

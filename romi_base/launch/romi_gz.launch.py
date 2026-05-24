@@ -2,7 +2,7 @@
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -11,7 +11,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('romi_base')
-    gazebo_share = get_package_share_directory('gazebo_ros')
+    ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
 
     world = LaunchConfiguration('world')
     use_rviz = LaunchConfiguration('use_rviz')
@@ -21,13 +21,13 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value=f'{gazebo_share}/worlds/empty.world',
-            description='Gazebo world file',
+            default_value=f'{pkg_share}/worlds/romi_simple_gz.sdf',
+            description='Gazebo Sim world file',
         ),
         DeclareLaunchArgument(
             'use_rviz',
             default_value='false',
-            description='Launch RViz alongside Gazebo',
+            description='Launch RViz alongside Gazebo Sim',
         ),
         DeclareLaunchArgument(
             'rviz_config',
@@ -39,22 +39,45 @@ def generate_launch_description():
             default_value='none',
             description='Robot command source: none | keyboard_teleop | obstacle_avoidance',
         ),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{gazebo_share}/launch/gazebo.launch.py'),
-            launch_arguments={'world': world}.items(),
+            PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
+            launch_arguments={
+                'gz_args': ['-r ', world],
+                'on_exit_shutdown': 'true',
+            }.items(),
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
             launch_arguments={
                 'use_simulation': 'true',
                 'use_joint_state_publisher': 'false',
+                'use_sim_time': 'true',
             }.items(),
         ),
         Node(
-            package='gazebo_ros',
-            executable='spawn_entity.py',
+            package='ros_gz_sim',
+            executable='create',
             name='spawn_romi_base',
-            arguments=['-entity', 'romi_base', '-topic', 'robot_description'],
+            arguments=[
+                '-name', 'romi_base',
+                '-topic', 'robot_description',
+                '-z', '0.08',
+            ],
+            output='screen',
+        ),
+        Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name='ros_gz_bridge',
+            arguments=[
+                '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+                '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
+                '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+                '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+                '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
+                '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
+            ],
             output='screen',
         ),
         Node(
@@ -77,6 +100,7 @@ def generate_launch_description():
             name='rviz2',
             condition=IfCondition(use_rviz),
             arguments=['-d', rviz_config],
+            parameters=[{'use_sim_time': True}],
             output='screen',
         ),
     ])

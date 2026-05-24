@@ -12,7 +12,6 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     romi_pkg_share = get_package_share_directory('romi_base')
-    gazebo_pkg_share = get_package_share_directory('gazebo_ros')
 
     params_file = LaunchConfiguration('params_file')
     use_gazebo = LaunchConfiguration('use_gazebo')
@@ -20,7 +19,6 @@ def generate_launch_description():
     use_lidar = LaunchConfiguration('use_lidar')
     use_description = LaunchConfiguration('use_description')
     use_rviz = LaunchConfiguration('use_rviz')
-    use_simulation = LaunchConfiguration('use_simulation')
     use_joint_state_publisher = LaunchConfiguration('use_joint_state_publisher')
     mode = LaunchConfiguration('mode')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
@@ -39,7 +37,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'gazebo_world',
-            default_value=f'{gazebo_pkg_share}/worlds/empty.world',
+            default_value=f'{romi_pkg_share}/worlds/romi_simple_gz.sdf',
             description='World file for Gazebo when use_gazebo=true',
         ),
         DeclareLaunchArgument(
@@ -56,11 +54,6 @@ def generate_launch_description():
             'use_rviz',
             default_value='false',
             description='Launch RViz with ROMI visualization config',
-        ),
-        DeclareLaunchArgument(
-            'use_simulation',
-            default_value='false',
-            description='Enable simulation-specific tags in xacro',
         ),
         DeclareLaunchArgument(
             'use_joint_state_publisher',
@@ -117,7 +110,8 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_description.launch.py'),
             condition=IfCondition(PythonExpression(["'", use_description, "' == 'true' and '", use_rviz, "' != 'true' and '", use_gazebo, "' != 'true'"])),
             launch_arguments={
-                'use_simulation': use_simulation,
+                'use_simulation': 'false',
+                'use_sim_time': 'false',
                 'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
@@ -125,12 +119,13 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_rviz.launch.py'),
             condition=IfCondition(PythonExpression(["'", use_rviz, "' == 'true' and '", use_gazebo, "' != 'true'"])),
             launch_arguments={
-                'use_simulation': use_simulation,
+                'use_simulation': 'false',
+                'use_sim_time': 'false',
                 'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_gazebo.launch.py'),
+            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_gz.launch.py'),
             condition=IfCondition(use_gazebo),
             launch_arguments={
                 'world': gazebo_world,

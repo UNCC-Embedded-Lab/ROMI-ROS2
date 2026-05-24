@@ -9,23 +9,25 @@
     <!-- <xacro:include filename="romi_camera.xacro"/> -->
     <xacro:include filename="romi_lidar.xacro"/>
 
-    <!-- For sim only: drive the wheel joints from /cmd_vel in Gazebo. -->
+    <!-- For sim only: drive wheel joints and publish odom/joint states. -->
     <xacro:if value="$(arg use_simulation)">
         <gazebo>
-            <plugin name="diff_drive_controller" filename="libgazebo_ros_diff_drive.so">
-                <ros>
-                    <remapping>cmd_vel:=/cmd_vel</remapping>
-                    <remapping>odom:=/odom</remapping>
-                </ros>
-                <update_rate>50</update_rate>
+            <plugin filename="ignition-gazebo6-diff-drive-system" name="ignition::gazebo::systems::DiffDrive">
                 <left_joint>left_wheel_joint</left_joint>
                 <right_joint>right_wheel_joint</right_joint>
                 <wheel_separation>0.141</wheel_separation>
                 <wheel_radius>0.035</wheel_radius>
-                <publish_odom>true</publish_odom>
-                <publish_odom_tf>true</publish_odom_tf>
-                <odometry_frame>odom</odometry_frame>
-                <robot_base_frame>base_link</robot_base_frame>
+                <topic>/cmd_vel</topic>
+                <odom_topic>/odom</odom_topic>
+                <tf_topic>/tf</tf_topic>
+                <frame_id>odom</frame_id>
+                <child_frame_id>base_link</child_frame_id>
+            </plugin>
+
+            <plugin filename="ignition-gazebo6-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
+                <topic>/joint_states</topic>
+                <joint_name>left_wheel_joint</joint_name>
+                <joint_name>right_wheel_joint</joint_name>
             </plugin>
         </gazebo>
     </xacro:if>

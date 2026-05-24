@@ -141,13 +141,17 @@ ros2 launch romi_base romi_rviz.launch.py
 Gazebo simulation:
 
 ```bash
-ros2 launch romi_base romi_gazebo.launch.py mode:=keyboard_teleop
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=keyboard_teleop use_rviz:=true
 ```
 
-Gazebo from unified launch (hardware stack disabled):
+Modern Gazebo defaults to: `worlds/romi_simple_gz.sdf`.
+To override it:
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=keyboard_teleop use_rviz:=true
+ros2 launch romi_base romi_robot.launch.py \
+  use_gazebo:=true \
+  mode:=keyboard_teleop \
+  gazebo_world:=/root/ros2_ws/src/ROMI-ROS2/romi_base/worlds/romi_simple_gz.sdf
 ```
 
 Note: `use_lidar:=true` requires `rplidar_ros` to be built and sourced.
@@ -160,10 +164,9 @@ Note: `use_lidar:=true` requires `rplidar_ros` to be built and sourced.
 - `lidar_frame_id`: default `laser`
 - `params_file`: defaults to `config/romi_params.yaml`
 - `use_gazebo`: run Gazebo simulation instead of hardware stack
-- `gazebo_world`: Gazebo world file used when `use_gazebo:=true`
+- `gazebo_world`: world file path used when `use_gazebo:=true`
 - `use_description`: launch robot_state_publisher description stack
 - `use_rviz`: launch RViz visualization stack
-- `use_simulation`: pass xacro simulation toggle to the description
 - `use_joint_state_publisher`: run joint_state_publisher for visualized joints
 
 ## Description Assets
