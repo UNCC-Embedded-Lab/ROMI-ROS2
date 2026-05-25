@@ -45,7 +45,9 @@ source install/setup.bash
 Optionally make this automatic for every new shell in the container:
 
 ```bash
+echo "echo '[romi_ros2] Applying ROS environment from /opt/ros/humble/setup.bash'" >> ~/.bashrc
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+echo "echo '[romi_ros2] Applying workspace overlay from /root/ros2_ws/install/setup.bash'" >> ~/.bashrc
 echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
