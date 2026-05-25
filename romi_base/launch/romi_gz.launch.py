@@ -14,6 +14,7 @@ def generate_launch_description():
     ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
 
     world = LaunchConfiguration('world')
+    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     use_rviz = LaunchConfiguration('use_rviz')
     mode = LaunchConfiguration('mode')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -23,6 +24,11 @@ def generate_launch_description():
             'world',
             default_value=f'{pkg_share}/worlds/romi_simple_gz.sdf',
             description='Gazebo Sim world file',
+        ),
+        DeclareLaunchArgument(
+            'use_gazebo_gui',
+            default_value='false',
+            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'use_rviz',
@@ -37,13 +43,22 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'mode',
             default_value='none',
-            description='Robot command source: none | teleop_twist_keyboard | obstacle_avoidance',
+            description='Robot command source: none | obstacle_avoidance',
         ),
         SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
+            condition=IfCondition(use_gazebo_gui),
             launch_arguments={
                 'gz_args': ['-r ', world],
+                'on_exit_shutdown': 'true',
+            }.items(),
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
+            condition=IfCondition(PythonExpression(["'", use_gazebo_gui, "' != 'true'"])),
+            launch_arguments={
+                'gz_args': ['-r -s ', world],
                 'on_exit_shutdown': 'true',
             }.items(),
         ),
@@ -81,13 +96,6 @@ def generate_launch_description():
             output='screen',
         ),
         Node(
-            package='teleop_twist_keyboard',
-            executable='teleop_twist_keyboard',
-            name='teleop_twist_keyboard',
-            condition=IfCondition(PythonExpression(["'", mode, "' == 'teleop_twist_keyboard'"])),
-            output='screen',
-        ),
-        Node(
             package='romi_base',
             executable='obstacle_avoidance',
             name='obstacle_avoidance_node',
@@ -98,7 +106,7 @@ def generate_launch_description():
             package='rviz2',
             executable='rviz2',
             name='rviz2',
-            condition=IfCondition(use_rviz),
+            condition=IfCondition(PythonExpression(["'", use_rviz, "' == 'true' and '", use_gazebo_gui, "' == 'true'"])),
             arguments=['-d', rviz_config],
             parameters=[{'use_sim_time': True}],
             output='screen',

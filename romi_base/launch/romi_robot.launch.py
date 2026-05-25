@@ -15,6 +15,7 @@ def generate_launch_description():
 
     params_file = LaunchConfiguration('params_file')
     use_gazebo = LaunchConfiguration('use_gazebo')
+    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     gazebo_world = LaunchConfiguration('gazebo_world')
     use_lidar = LaunchConfiguration('use_lidar')
     use_description = LaunchConfiguration('use_description')
@@ -34,6 +35,11 @@ def generate_launch_description():
             'use_gazebo',
             default_value='false',
             description='Run in Gazebo simulation instead of hardware bringup',
+        ),
+        DeclareLaunchArgument(
+            'use_gazebo_gui',
+            default_value='false',
+            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'gazebo_world',
@@ -63,7 +69,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'mode',
             default_value='none',
-            description='Robot command source: none | teleop_twist_keyboard | obstacle_avoidance',
+            description='Robot command source: none | obstacle_avoidance',
         ),
         DeclareLaunchArgument(
             'lidar_serial_port',
@@ -89,13 +95,6 @@ def generate_launch_description():
             name='base_controller_node',
             parameters=[params_file],
             condition=IfCondition(PythonExpression(["'", use_gazebo, "' != 'true'"])),
-            output='screen',
-        ),
-        Node(
-            package='teleop_twist_keyboard',
-            executable='teleop_twist_keyboard',
-            name='teleop_twist_keyboard',
-            condition=IfCondition(PythonExpression(["'", mode, "' == 'teleop_twist_keyboard'"])),
             output='screen',
         ),
         Node(
@@ -131,6 +130,7 @@ def generate_launch_description():
                 'world': gazebo_world,
                 'mode': mode,
                 'use_rviz': use_rviz,
+                'use_gazebo_gui': use_gazebo_gui,
                 'rviz_config': f'{romi_pkg_share}/rviz/romi_base.rviz',
             }.items(),
         ),

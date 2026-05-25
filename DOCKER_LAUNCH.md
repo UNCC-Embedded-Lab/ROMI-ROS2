@@ -92,17 +92,17 @@ On later sessions, just restart and re-enter the same container.
 
 ## 4) Launch ROMI nodes from the container
 
-Recommended Gazebo flow (prevents keyboard teleop TTY error):
+Recommended workflow:
 
-Terminal 1 inside container (Gazebo + robot):
+Terminal 1 (headless simulation):
 
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=false use_rviz:=false
 ```
 
-Terminal 2 inside container (interactive keyboard teleop):
+Terminal 2 (interactive keyboard teleop):
 
 ```bash
 docker exec -it romi_ros2 bash
@@ -111,15 +111,15 @@ source /root/ros2_ws/install/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-If Gazebo GUI is not required, you can run headless server only:
+Optional: if X11 forwarding is configured and you want GUI windows:
 
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_gz.launch.py mode:=none
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=true use_rviz:=true
 ```
 
-Core stack:
+Hardware/core stack (no Gazebo):
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -127,21 +127,7 @@ source /root/ros2_ws/install/setup.bash
 ros2 launch romi_base romi_core.launch.py
 ```
 
-Gazebo simulation:
-
-```bash
-source /opt/ros/humble/setup.bash
-source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
-```
-
-Full robot launch (hardware path + generic keyboard teleop mode):
-
-```bash
-source /opt/ros/humble/setup.bash
-source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py mode:=teleop_twist_keyboard use_lidar:=true
-```
+Note: do not launch `teleop_twist_keyboard` through ROS launch in containers. Run it in its own interactive terminal.
 
 ## 5) Start a hardware-access container (USB/I2C)
 
