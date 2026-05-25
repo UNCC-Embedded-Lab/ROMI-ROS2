@@ -42,6 +42,14 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
+Optionally make this automatic for every new shell in the container:
+
+```bash
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
 ## 2) Enable X11 for GUI Features
 
 Run this on the host before launching GUI apps from the container:
