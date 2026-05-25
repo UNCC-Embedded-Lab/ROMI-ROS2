@@ -45,6 +45,12 @@ If your ROMI control board is not already flashed:
 2. Boot the Pi and connect it to your network.
 3. Verify SSH access from your laptop:
 
+Default credentials for the provided Pi image are:
+
+- User: `student`
+- Host: `192.168.4.1`
+- Password: `ecgr4161`
+
 ```bash
 ssh <user>@<pi-host>
 ```

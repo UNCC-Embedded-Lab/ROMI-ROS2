@@ -6,7 +6,6 @@
 
 
     <xacro:include filename="romi_core.xacro"/>
-    <!-- <xacro:include filename="romi_camera.xacro"/> -->
     <xacro:include filename="romi_lidar.xacro"/>
 
     <!-- For sim only: drive wheel joints and publish odom/joint states. -->
