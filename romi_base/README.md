@@ -139,10 +139,10 @@ Obstacle avoidance mode:
 ros2 launch romi_base romi_robot.launch.py mode:=obstacle_avoidance use_lidar:=true
 ```
 
-Simulation (recommended in container, headless):
+Simulation (recommended in container, with GUI):
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=false use_rviz:=false
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=false
 ```
 
 In a second terminal, run keyboard teleop:
@@ -154,7 +154,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 Simulation (with GUI, only if X11 is configured):
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=true use_rviz:=true
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
 ```
 
 Optional: override Gazebo world:
@@ -163,7 +163,6 @@ Optional: override Gazebo world:
 ros2 launch romi_base romi_robot.launch.py \
   use_gazebo:=true \
   mode:=none \
-  use_gazebo_gui:=false \
   use_rviz:=false \
   gazebo_world:=/root/ros2_ws/src/ROMI-ROS2/romi_base/worlds/romi_simple_gz.sdf
 ```
@@ -182,11 +181,12 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - `lidar_frame_id`: default `laser`
 - `params_file`: defaults to `config/romi_params.yaml`
 - `use_gazebo`: run Gazebo simulation instead of hardware stack
-- `use_gazebo_gui`: run Gazebo GUI (`true`) or server-only headless mode (`false`)
 - `gazebo_world`: world file path used when `use_gazebo:=true`
 - `use_description`: launch robot_state_publisher description stack
 - `use_rviz`: launch RViz visualization stack
 - `use_joint_state_publisher`: run joint_state_publisher for visualized joints
+
+Footnote: when running the GUI launch inside a container, make sure the host X server is available to the container. A simple setup is to allow the local container user on the host with `xhost +local:root` before starting the container, then pass `DISPLAY` and `/tmp/.X11-unix` through to the container.
 
 ## Description Assets
 

@@ -19,13 +19,14 @@
     <gazebo reference="lidar_frame">
         <material>Gazebo/Black</material>
 
-        <sensor name="laser" type="ray">
+        <sensor name="laser" type="gpu_lidar">
             <pose> 0 0 0 0 0 0 </pose>
             <always_on>true</always_on>
             <visualize>true</visualize>
             <update_rate>10</update_rate>
+            <frame_id>lidar_frame</frame_id>
             <topic>/scan</topic>
-            <ray>
+            <lidar>
                 <scan>
                     <horizontal>
                         <samples>360</samples>
@@ -37,7 +38,7 @@
                     <min>0.0005</min>
                     <max>15</max>
                 </range>
-            </ray>
+            </lidar>
         </sensor>
     </gazebo>
 

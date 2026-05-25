@@ -94,12 +94,12 @@ On later sessions, just restart and re-enter the same container.
 
 Recommended workflow:
 
-Terminal 1 (headless simulation):
+Terminal 1 (Gazebo GUI via X11):
 
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=false use_rviz:=false
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=false
 ```
 
 Terminal 2 (interactive keyboard teleop):
@@ -116,8 +116,10 @@ Optional: if X11 forwarding is configured and you want GUI windows:
 ```bash
 source /opt/ros/humble/setup.bash
 source /root/ros2_ws/install/setup.bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_gazebo_gui:=true use_rviz:=true
+ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
 ```
+
+Footnote: if the Gazebo GUI does not open in a container, allow the container to access the host X server before launching it, for example with `xhost +local:root`, and ensure `DISPLAY` plus the `/tmp/.X11-unix` socket are mounted into the container.
 
 Hardware/core stack (no Gazebo):
 
