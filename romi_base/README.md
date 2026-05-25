@@ -133,16 +133,16 @@ Hardware (core stack):
 ros2 launch romi_base romi_core.launch.py
 ```
 
+RViz launcher:
+
+```bash
+ros2 launch romi_base romi_rviz_only.launch.py
+```
+
 Obstacle avoidance mode:
 
 ```bash
 ros2 launch romi_base romi_robot.launch.py mode:=obstacle_avoidance use_lidar:=true
-```
-
-Simulation (recommended in container, with GUI):
-
-```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=false
 ```
 
 In a second terminal, run keyboard teleop:
