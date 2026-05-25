@@ -1,0 +1,29 @@
+{
+  "name": "romi_ros2",
+  "containerName": "romi_ros2",
+  "image": "osrf/ros:humble-desktop",
+  "workspaceFolder": "/root/ros2_ws/src/ROMI-ROS2",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/root/ros2_ws/src/ROMI-ROS2,type=bind",
+  "runArgs": [
+    "--net=host",
+    "-e",
+    "ROS_DOMAIN_ID=0",
+    "-e",
+    "ROS_LOCALHOST_ONLY=0",
+    "-e",
+    "DISPLAY=${localEnv:DISPLAY}",
+    "-v",
+    "/tmp/.X11-unix:/tmp/.X11-unix"
+  ],
+  "remoteEnv": {
+    "ROS_DOMAIN_ID": "0",
+    "ROS_LOCALHOST_ONLY": "0"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
