@@ -87,18 +87,6 @@ def generate_launch_description():
             output='screen',
         ),
         Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='laser_static_tf_publisher',
-            arguments=[
-                '0', '0', '0.105',
-                '3.141592653589793', '0', '0',
-                'base_link',
-                'romi_base/base_link/laser',
-            ],
-            output='screen',
-        ),
-        Node(
             package='romi_base',
             executable='obstacle_avoidance',
             name='obstacle_avoidance_node',
