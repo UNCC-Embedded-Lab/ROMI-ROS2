@@ -12,12 +12,13 @@ ROS_DISTRO_NAME="${ROS_DISTRO_NAME:-humble}"
 RUN_REMOTE_BUILD="true"
 BUILD_SCOPE="romi_base"
 SYNC_MODE="src"
+REMOTE_CLEAN="false"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--full] [--src-only] [--host HOST] [--user USER] [--remote-workspace PATH] [--local-workspace PATH] [--ros-distro DISTRO] [--no-build] [--all-packages]
+Usage: $(basename "$0") [--full] [--src-only] [--host HOST] [--user USER] [--remote-workspace PATH] [--local-workspace PATH] [--ros-distro DISTRO] [--no-build] [--all-packages] [--clean]
 
-Sync ROMI ROS2 sources to a Raspberry Pi and remove stale colcon artifacts on the target first.
+Sync ROMI ROS2 sources to a Raspberry Pi.
 
 Options:
   --full                  Sync the whole workspace except build/install/log.
@@ -29,6 +30,7 @@ Options:
   --ros-distro DISTRO     ROS distro on Pi. Default: ${ROS_DISTRO_NAME}
   --no-build              Skip remote build/validation after sync.
   --all-packages          Build all packages on Pi after sync.
+  --clean                 Remove remote build/install/log before syncing.
   -h, --help              Show this help.
 
 Environment overrides:
@@ -75,6 +77,10 @@ while [[ $# -gt 0 ]]; do
       BUILD_SCOPE="all"
       shift
       ;;
+    --clean)
+      REMOTE_CLEAN="true"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -105,10 +111,14 @@ REMOTE="${PI_USER}@${PI_HOST}"
 REMOTE_WS_CLEAN=${PI_WORKSPACE%/}
 LOCAL_WS_CLEAN=${LOCAL_WORKSPACE%/}
 
-# Always wipe generated colcon artifacts on the Pi so cached absolute paths
-# from previous machines/runs cannot break the next build.
-echo "Removing stale build artifacts on ${REMOTE}:${REMOTE_WS_CLEAN}"
-ssh "$REMOTE" "rm -rf ${REMOTE_WS_CLEAN}/build ${REMOTE_WS_CLEAN}/install ${REMOTE_WS_CLEAN}/log && mkdir -p ${REMOTE_WS_CLEAN}/src"
+if [[ "$REMOTE_CLEAN" == "true" ]]; then
+  # Use an explicit clean only when the remote workspace needs a hard reset.
+  echo "Removing build artifacts on ${REMOTE}:${REMOTE_WS_CLEAN}"
+  ssh "$REMOTE" "rm -rf ${REMOTE_WS_CLEAN}/build ${REMOTE_WS_CLEAN}/install ${REMOTE_WS_CLEAN}/log && mkdir -p ${REMOTE_WS_CLEAN}/src"
+else
+  echo "Preserving remote build/install/log on ${REMOTE}:${REMOTE_WS_CLEAN}"
+  ssh "$REMOTE" "mkdir -p ${REMOTE_WS_CLEAN}/src"
+fi
 
 if [[ "$SYNC_MODE" == "full" ]]; then
   # Full mode mirrors the workspace while intentionally skipping generated dirs.

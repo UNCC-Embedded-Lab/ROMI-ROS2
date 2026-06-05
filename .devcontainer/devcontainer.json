@@ -24,6 +24,7 @@
     "ROS_DOMAIN_ID": "0",
     "ROS_LOCALHOST_ONLY": "0"
   },
+  "postStartCommand": "bash -lc \"grep -qxF 'source /opt/ros/humble/setup.bash' ~/.bashrc || echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc; grep -qxF '[ -f /root/ros2_ws/src/ROMI-ROS2/install/setup.bash ] && source /root/ros2_ws/src/ROMI-ROS2/install/setup.bash' ~/.bashrc || echo '[ -f /root/ros2_ws/src/ROMI-ROS2/install/setup.bash ] && source /root/ros2_ws/src/ROMI-ROS2/install/setup.bash' >> ~/.bashrc\"",
   "customizations": {
     "vscode": {
       "settings": {

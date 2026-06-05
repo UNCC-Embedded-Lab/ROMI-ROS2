@@ -66,7 +66,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'lidar_frame_id',
-            default_value='laser',
+            default_value='lidar_frame',
             description='Frame id for LaserScan messages',
         ),
         Node(
