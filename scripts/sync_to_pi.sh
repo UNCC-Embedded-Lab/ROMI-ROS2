@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Defaults are tuned for a typical lab setup; each value can be overridden
 # by either CLI flags or environment variables.
-PI_USER="${PI_USER:-student}"
+PI_USER="${PI_USER:-romi32u4}"
 PI_HOST="${PI_HOST:-192.168.4.1}"
 PI_WORKSPACE="${PI_WORKSPACE:-~/ros2_ws}"
 LOCAL_WORKSPACE="${LOCAL_WORKSPACE:-$HOME/ros2_ws}"
@@ -163,24 +163,11 @@ source install/setup.bash
 set -u
 python3 -c "import importlib.metadata as m; m.distribution('romi-base'); print('romi-base metadata OK')"
 
-# Surface optional runtime tools without blocking offline hardware deploys.
-if ! command -v xacro >/dev/null 2>&1; then
-  echo "WARNING: xacro is missing on the Pi." >&2
-  echo "  Description/RViz launches will fail until it is installed:" >&2
-  echo "  sudo apt-get update && sudo apt-get install -y ros-${ROS_DISTRO_NAME}-xacro" >&2
-  echo "  Hardware bringup can still run with: ros2 launch romi_base romi_core.launch.py use_description:=false use_rviz:=false" >&2
-fi
-
-if ! ros2 pkg prefix teleop_twist_keyboard >/dev/null 2>&1; then
-  echo "WARNING: teleop_twist_keyboard is missing on the Pi." >&2
-  echo "  Keyboard teleop launch mode will be unavailable until it is installed:" >&2
-  echo "  sudo apt-get update && sudo apt-get install -y ros-${ROS_DISTRO_NAME}-teleop-twist-keyboard" >&2
-fi
 EOF
 
   echo "Remote build complete and romi-base metadata is present."
   echo "You can now launch on Pi with:"
-  echo "  ros2 launch romi_base romi_core.launch.py use_rviz:=false use_description:=false"
+  echo "  ros2 launch romi_base romi_core.launch.py"
 else
   echo "Sync complete. Build on the Pi with:"
   echo "  cd ${REMOTE_WS_CLEAN} && source /opt/ros/${ROS_DISTRO_NAME}/setup.bash && colcon build --symlink-install --packages-select romi_base"

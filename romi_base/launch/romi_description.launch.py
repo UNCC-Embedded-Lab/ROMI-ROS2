@@ -28,7 +28,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'use_simulation',
             default_value='false',
-            description='Enable simulation-specific tags in xacro',
+            description='Enable simulation-specific robot description tags',
         ),
         DeclareLaunchArgument(
             'use_joint_state_publisher',

@@ -47,9 +47,9 @@ If your ROMI control board is not already flashed:
 
 Default credentials for the provided Pi image are:
 
-- User: `student`
+- User: `romi32u4`
 - Host: `192.168.4.1`
-- Password: `ecgr4161`
+- Password: `romi32u4`
 
 ```bash
 ssh <user>@<pi-host>
@@ -113,19 +113,6 @@ source install/setup.bash
 ```
 
 ## 5) Launch Examples
-
-If launching on a physical Pi and you want robot description or RViz on the Pi itself, install:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ros-humble-xacro ros-humble-teleop-twist-keyboard
-```
-
-If the Pi is offline, hardware control can still run without `xacro` by skipping description/RViz:
-
-```bash
-ros2 launch romi_base romi_core.launch.py use_description:=false use_rviz:=false
-```
 
 Hardware (core stack):
 
