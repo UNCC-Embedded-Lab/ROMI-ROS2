@@ -13,7 +13,6 @@ def generate_launch_description():
 
     use_simulation = LaunchConfiguration('use_simulation')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    use_joint_state_publisher = LaunchConfiguration('use_joint_state_publisher')
     rviz_config = LaunchConfiguration('rviz_config')
 
     return LaunchDescription([
@@ -21,11 +20,6 @@ def generate_launch_description():
             'use_simulation',
             default_value='false',
             description='Enable simulation-specific robot description tags',
-        ),
-        DeclareLaunchArgument(
-            'use_joint_state_publisher',
-            default_value='true',
-            description='Run joint_state_publisher for model visualization',
         ),
         DeclareLaunchArgument(
             'use_sim_time',
@@ -41,7 +35,6 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
             launch_arguments={
                 'use_simulation': use_simulation,
-                'use_joint_state_publisher': use_joint_state_publisher,
                 'use_sim_time': use_sim_time,
             }.items(),
         ),

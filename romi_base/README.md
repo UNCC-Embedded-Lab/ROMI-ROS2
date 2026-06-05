@@ -171,7 +171,7 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - `gazebo_world`: world file path used when `use_gazebo:=true`
 - `use_description`: launch robot_state_publisher description stack
 - `use_rviz`: launch RViz visualization stack
-- `use_joint_state_publisher`: run joint_state_publisher for visualized joints
+- `joint_state_publisher` is launched automatically whenever the description stack is launched
 
 Footnote: when running the GUI launch inside a container, make sure the host X server is available to the container. Before starting or rebuilding the container, run `xhost +si:localuser:root` on the host, and ensure the host `XAUTHORITY` variable points to a valid cookie file. Then pass `DISPLAY`, `XAUTHORITY`, and `/tmp/.X11-unix` through to the container.
 

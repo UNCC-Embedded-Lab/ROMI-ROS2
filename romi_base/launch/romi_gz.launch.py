@@ -57,7 +57,6 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
             launch_arguments={
                 'use_simulation': 'true',
-                'use_joint_state_publisher': 'false',
                 'use_sim_time': 'true',
             }.items(),
         ),
