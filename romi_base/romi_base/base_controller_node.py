@@ -66,10 +66,23 @@ class BaseControllerNode(Node):
 
         self.get_logger().info('ROMI Base Controller lab starter initialized.')
 
+    def _get_wheel_speed_targets(self, linear_x: float, angular_z: float):
+        half_wheel_base = self.wheel_base / 2.0
+        left_target = linear_x - angular_z * half_wheel_base
+        right_target = linear_x + angular_z * half_wheel_base
+        return left_target, right_target
+
+    def _clamp(self, value: float, lower: float, upper: float) -> float:
+        return max(lower, min(upper, value))
+
+    def _normalize_angle(self, angle: float) -> float:
+        return math.atan2(math.sin(angle), math.cos(angle))
+
     def twist_callback(self, msg: Twist):
-        # TODO (lab): convert cmd_vel (v, w) into target wheel speeds.
-        # For the starter branch, we intentionally do nothing.
-        _ = msg
+        self.target_left_mps, self.target_right_mps = self._get_wheel_speed_targets(
+            float(msg.linear.x),
+            float(msg.angular.z),
+        )
 
     def encoder_callback(self, msg: Int32MultiArray):
         current_time = self.get_clock().now()
@@ -89,31 +102,37 @@ class BaseControllerNode(Node):
             self.publish_odometry(current_time, 0.0, 0.0)
             return
 
-        # TODO (lab): compute wrapped delta ticks.
-        # Calls are commented out in starter mode so this node runs even before
-        # students implement rollover logic in calculate_delta().
-        # delta_left = self.calculate_delta(current_left, self.prev_left_ticks)
-        # delta_right = self.calculate_delta(current_right, self.prev_right_ticks)
-        delta_left = 0
-        delta_right = 0
+        delta_left = self.calculate_delta(current_left, self.prev_left_ticks)
+        delta_right = self.calculate_delta(current_right, self.prev_right_ticks)
 
         self.prev_left_ticks = current_left
         self.prev_right_ticks = current_right
 
-        # TODO (lab): convert ticks to wheel distances/speeds and apply PI control.
-        # Keep placeholder variables for future exercises and to avoid lint noise.
-        _ = dt
-        _ = delta_left
-        _ = delta_right
+        if dt <= 0.0:
+            dt = 1e-6
+
+        left_distance = (delta_left / self.ticks_per_rev_wheel) * self.wheel_circumference
+        right_distance = (delta_right / self.ticks_per_rev_wheel) * self.wheel_circumference
+        measured_left_mps = left_distance / dt
+        measured_right_mps = right_distance / dt
+
+        left_pwm = self.calculate_pi_pwm(self.target_left_mps - measured_left_mps, dt, 'left')
+        right_pwm = self.calculate_pi_pwm(self.target_right_mps - measured_right_mps, dt, 'right')
 
         pwm_msg = Int16MultiArray()
-        # Starter behavior: publish neutral PWM so motors remain stopped.
-        pwm_msg.data = [0, 0]
+        pwm_msg.data = [int(round(left_pwm)), int(round(right_pwm))]
         self.pwm_pub.publish(pwm_msg)
 
-        # TODO (lab): integrate odometry from wheel distances.
-        # Starter behavior: publish static pose and zero twist.
-        self.publish_odometry(current_time, 0.0, 0.0)
+        linear_distance = 0.5 * (left_distance + right_distance)
+        angular_distance = (right_distance - left_distance) / self.wheel_base
+        theta_mid = self.theta + angular_distance / 2.0
+        self.x += linear_distance * math.cos(theta_mid)
+        self.y += linear_distance * math.sin(theta_mid)
+        self.theta = self._normalize_angle(self.theta + angular_distance)
+
+        actual_linear = linear_distance / dt
+        actual_angular = angular_distance / dt
+        self.publish_odometry(current_time, actual_linear, actual_angular)
 
     def publish_odometry(self, current_time, v: float, w: float):
         q_z = math.sin(self.theta / 2.0)
@@ -145,19 +164,37 @@ class BaseControllerNode(Node):
         self.odom_pub.publish(odom)
 
     def calculate_pi_pwm(self, error: float, dt: float, side: str) -> float:
-        # TODO (lab): implement PI controller with anti-windup and clamping.
-        # Returning zero keeps the starter node safe and deterministic.
-        _ = error
-        _ = dt
-        _ = side
-        return 0.0
+        proportional = self.kp * error
+
+        if side == 'left':
+            self.integral_left += error * dt
+            integral_term = self.ki * self.integral_left
+        else:
+            self.integral_right += error * dt
+            integral_term = self.ki * self.integral_right
+
+        raw_pwm = proportional + integral_term
+        clamped_pwm = self._clamp(raw_pwm, -self.max_pwm, self.max_pwm)
+
+        if clamped_pwm != raw_pwm and self.ki != 0.0:
+            if side == 'left':
+                self.integral_left = (clamped_pwm - proportional) / self.ki
+            else:
+                self.integral_right = (clamped_pwm - proportional) / self.ki
+
+        return clamped_pwm
 
     def calculate_delta(self, current: int, prev: int) -> int:
-        # TODO (lab): implement encoder wrap handling for int16 rollover.
-        # Returning zero keeps startup behavior simple until lab completion.
-        _ = current
-        _ = prev
-        return 0
+        delta = current - prev
+        rollover_span = 1 << 16
+        rollover_threshold = 1 << 15
+
+        if delta > rollover_threshold:
+            delta -= rollover_span
+        elif delta < -rollover_threshold:
+            delta += rollover_span
+
+        return delta
 
 
 def main(args=None):
