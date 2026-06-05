@@ -123,7 +123,7 @@ fi
 if [[ "$SYNC_MODE" == "full" ]]; then
   # Full mode mirrors the workspace while intentionally skipping generated dirs.
   echo "Syncing full workspace to ${REMOTE}:${REMOTE_WS_CLEAN}"
-  rsync -avz --delete \
+  rsync -avz --no-times --delete \
     --exclude='build/' \
     --exclude='install/' \
     --exclude='log/' \
@@ -135,7 +135,7 @@ if [[ "$SYNC_MODE" == "full" ]]; then
 else
   # Default mode syncs only source code to minimize transfer time and risk.
   echo "Syncing src/ROMI-ROS2 to ${REMOTE}:${REMOTE_WS_CLEAN}/src/ROMI-ROS2"
-  rsync -avz --delete \
+  rsync -avz --no-times --delete \
     --exclude='.vscode/' \
     --exclude='.devcontainer/' \
     --exclude='.docker/' \
