@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Defaults are tuned for a typical lab setup; each value can be overridden
 # by either CLI flags or environment variables.
-PI_USER="${PI_USER:-romi32u4}"
+PI_USER="${PI_USER:-student}"
 PI_HOST="${PI_HOST:-192.168.4.1}"
 PI_WORKSPACE="${PI_WORKSPACE:-~/ros2_ws}"
 LOCAL_WORKSPACE="${LOCAL_WORKSPACE:-$HOME/ros2_ws}"

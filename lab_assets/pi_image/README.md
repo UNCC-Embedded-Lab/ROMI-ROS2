@@ -5,7 +5,7 @@ Store the class Raspberry Pi image and metadata in this directory.
 Current image baseline:
 
 - Includes `xacro` and the ROMI ROS 2 runtime dependencies used by this repo.
-- Default SSH username: `romi32u4`
+- Default SSH username: `student`
 - Default SSH password: `romi32u4`
 
 Recommended contents:

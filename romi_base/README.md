@@ -47,7 +47,7 @@ If your ROMI control board is not already flashed:
 
 Default credentials for the provided Pi image are:
 
-- User: `romi32u4`
+- User: `student`
 - Host: `192.168.4.1`
 - Password: `romi32u4`
 
