@@ -62,7 +62,20 @@ Run this on the host before launching GUI apps from the container:
 xhost +si:localuser:root
 ```
 
+Before the first container start, make sure the host-side Xauthority file exists:
+
+```bash
+touch "${XAUTHORITY:-$HOME/.Xauthority}"
+```
+
 If RViz still prints `Authorization required, but no authorization protocol specified`, make sure the container inherited both `DISPLAY` and `XAUTHORITY` from the host shell before it was started, then restart the container and re-run the host `xhost` command above.
+
+If `stat /tmp/.Xauthority` inside the container reports a directory instead of a regular file, Docker created a bad bind mount because the host source file did not exist yet. In that case, stop and remove the container, create the host-side Xauthority file, then recreate the container:
+
+```bash
+docker rm -f romi_ros2
+touch "${XAUTHORITY:-$HOME/.Xauthority}"
+```
 
 Optional cleanup after you are done:
 
