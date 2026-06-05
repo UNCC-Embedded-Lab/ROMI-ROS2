@@ -15,7 +15,7 @@ Prerequisites:
 Pull the base image:
 
 ```bash
-docker pull osrf/ros:humble-desktop
+docker pull osrf/ros:humble-desktop-full
 ```
 
 Create the container once (persistent environment):
@@ -26,10 +26,12 @@ docker run -it --name romi_ros2 \
   -e ROS_DOMAIN_ID=0 \
   -e ROS_LOCALHOST_ONLY=0 \
   -e DISPLAY=$DISPLAY \
+  -e XAUTHORITY=/tmp/.Xauthority \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v ~/.Xauthority:/tmp/.Xauthority:ro \
   -v ~/ros2_ws:/root/ros2_ws \
   -w /root/ros2_ws \
-  osrf/ros:humble-desktop
+  osrf/ros:humble-desktop-full
 ```
 
 Inside the container, install dependencies and build once:
@@ -57,13 +59,15 @@ source ~/.bashrc
 Run this on the host before launching GUI apps from the container:
 
 ```bash
-xhost +local:root
+xhost +si:localuser:root
 ```
+
+If RViz still prints `Authorization required, but no authorization protocol specified`, make sure the container inherited both `DISPLAY` and `XAUTHORITY` from the host shell before it was started, then restart the container and re-run the host `xhost` command above.
 
 Optional cleanup after you are done:
 
 ```bash
-xhost -local:root
+xhost -si:localuser:root
 ```
 
 ## 3) Start the Persistent Container with Shared Workspace
@@ -74,6 +78,26 @@ For daily use, reuse the same container so installed packages and build artifact
 docker start romi_ros2
 docker exec -it romi_ros2 bash
 ```
+
+If you are not launching from VS Code and want to start the container from a plain terminal, use:
+
+```bash
+xhost +si:localuser:root
+
+docker run -it --name romi_ros2 \
+  --net=host \
+  -e ROS_DOMAIN_ID=0 \
+  -e ROS_LOCALHOST_ONLY=0 \
+  -e DISPLAY=$DISPLAY \
+  -e XAUTHORITY=/tmp/.Xauthority \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v ~/.Xauthority:/tmp/.Xauthority:ro \
+  -v ~/ros2_ws:/root/ros2_ws \
+  -w /root/ros2_ws \
+  osrf/ros:humble-desktop-full
+```
+
+You only need the `docker run` command the first time. After that, start the same container with `docker start romi_ros2` and reopen a shell with `docker exec -it romi_ros2 bash`.
 
 Inside the container each session:
 

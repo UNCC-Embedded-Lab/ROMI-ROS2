@@ -173,7 +173,9 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - `use_rviz`: launch RViz visualization stack
 - `use_joint_state_publisher`: run joint_state_publisher for visualized joints
 
-Footnote: when running the GUI launch inside a container, make sure the host X server is available to the container. A simple setup is to allow the local container user on the host with `xhost +local:root` before starting the container, then pass `DISPLAY` and `/tmp/.X11-unix` through to the container.
+Footnote: when running the GUI launch inside a container, make sure the host X server is available to the container. A simple setup is to allow the local container user on the host with `xhost +si:localuser:root` before starting the container, then pass `DISPLAY`, `XAUTHORITY`, and `/tmp/.X11-unix` through to the container.
+
+If RViz shows an X authorization error in Docker, also pass `XAUTHORITY` into the container and run `xhost +si:localuser:root` on the host before starting the container.
 
 ## Description Assets
 
