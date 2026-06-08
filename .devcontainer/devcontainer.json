@@ -1,7 +1,7 @@
 {
   "name": "romi_ros2",
   "containerName": "romi_ros2",
-  "initializeCommand": "sh -c 'touch \"${XAUTHORITY:-$HOME/.Xauthority}\"'",
+  "initializeCommand": "sh -c 'xauth nlist \"$DISPLAY\" 2>/dev/null | xauth -f /tmp/.Xauthority_devcontainer nmerge - 2>/dev/null || touch /tmp/.Xauthority_devcontainer'",
   "image": "osrf/ros:humble-desktop-full",
   "workspaceFolder": "/root/ros2_ws/src/ROMI-ROS2",
   "workspaceMount": "source=${localWorkspaceFolder},target=/root/ros2_ws/src/ROMI-ROS2,type=bind",
@@ -18,7 +18,7 @@
     "-v",
     "/tmp/.X11-unix:/tmp/.X11-unix",
     "-v",
-    "${localEnv:XAUTHORITY}:/tmp/.Xauthority:ro"
+    "/tmp/.Xauthority_devcontainer:/tmp/.Xauthority:ro"
   ],
   "remoteEnv": {
     "ROS_DOMAIN_ID": "0",

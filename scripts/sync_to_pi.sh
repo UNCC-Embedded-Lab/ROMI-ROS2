@@ -162,10 +162,19 @@ set +u
 source "/opt/ros/${ROS_DISTRO_NAME}/setup.bash"
 
 # Build only romi_base by default for a faster, deterministic validation pass.
+# If rplidar_ros has not been built yet, build it once as well so lidar launch
+# paths work out-of-the-box on the Pi.
 if [[ "$BUILD_SCOPE" == "all" ]]; then
   colcon build --symlink-install
 else
   colcon build --symlink-install --packages-select romi_base
+
+  if [[ ! -d install/rplidar_ros ]]; then
+    echo "rplidar_ros not found in install/. Building rplidar_ros once..."
+    colcon build --symlink-install --packages-select rplidar_ros
+  else
+    echo "rplidar_ros already present in install/. Skipping rebuild."
+  fi
 fi
 
 # Validate that Python package metadata exists so ros2 launch entry points resolve.
@@ -180,5 +189,5 @@ EOF
   echo "  ros2 launch romi_base romi_core.launch.py"
 else
   echo "Sync complete. Build on the Pi with:"
-  echo "  cd ${REMOTE_WS_CLEAN} && source /opt/ros/${ROS_DISTRO_NAME}/setup.bash && colcon build --symlink-install --packages-select romi_base"
+  echo "  cd ${REMOTE_WS_CLEAN} && source /opt/ros/${ROS_DISTRO_NAME}/setup.bash && colcon build --symlink-install --packages-select romi_base rplidar_ros"
 fi
