@@ -1,0 +1,1 @@
+/root/ros2_ws/src/ROMI-ROS2/rplidar_ros/launch/view_rplidar_a1_launch.py

@@ -13,10 +13,11 @@ RUN_REMOTE_BUILD="true"
 BUILD_SCOPE="romi_base"
 SYNC_MODE="src"
 REMOTE_CLEAN="false"
+FORCE_RPLIDAR_REBUILD="false"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--full] [--src-only] [--host HOST] [--user USER] [--remote-workspace PATH] [--local-workspace PATH] [--ros-distro DISTRO] [--no-build] [--all-packages] [--clean]
+Usage: $(basename "$0") [--full] [--src-only] [--host HOST] [--user USER] [--remote-workspace PATH] [--local-workspace PATH] [--ros-distro DISTRO] [--no-build] [--all-packages] [--clean] [--rebuild-rplidar]
 
 Sync ROMI ROS2 sources to a Raspberry Pi.
 
@@ -31,6 +32,7 @@ Options:
   --no-build              Skip remote build/validation after sync.
   --all-packages          Build all packages on Pi after sync.
   --clean                 Remove remote build/install/log before syncing.
+  --rebuild-rplidar       Force clean rebuild of rplidar_ros on Pi.
   -h, --help              Show this help.
 
 Environment overrides:
@@ -79,6 +81,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --clean)
       REMOTE_CLEAN="true"
+      shift
+      ;;
+    --rebuild-rplidar)
+      FORCE_RPLIDAR_REBUILD="true"
       shift
       ;;
     -h|--help)
@@ -151,6 +157,7 @@ if [[ "$RUN_REMOTE_BUILD" == "true" ]]; then
     ROS_DISTRO_NAME="$ROS_DISTRO_NAME" \
     REMOTE_WS_CLEAN="$REMOTE_WS_CLEAN" \
     BUILD_SCOPE="$BUILD_SCOPE" \
+    FORCE_RPLIDAR_REBUILD="$FORCE_RPLIDAR_REBUILD" \
     'bash -s' <<'EOF'
 set -euo pipefail
 
@@ -167,6 +174,36 @@ fi
 set +u
 source "/opt/ros/${ROS_DISTRO_NAME}/setup.bash"
 
+clean_rplidar_pkg() {
+  rm -rf build/rplidar_ros install/rplidar_ros
+}
+
+build_rplidar_pkg() {
+  local build_log
+  build_log=$(mktemp)
+
+  set +e
+  colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache 2>&1 | tee "$build_log"
+  local build_rc=${PIPESTATUS[0]}
+  set -e
+
+  if [[ $build_rc -eq 0 ]]; then
+    rm -f "$build_log"
+    return 0
+  fi
+
+  if grep -E -q "undefined reference to .*main|Clock skew detected" "$build_log"; then
+    echo "Detected stale or skewed rplidar_ros build artifacts; retrying with a clean package rebuild..."
+    clean_rplidar_pkg
+    colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache
+    rm -f "$build_log"
+    return 0
+  fi
+
+  rm -f "$build_log"
+  return "$build_rc"
+}
+
 # Build only romi_base by default for a faster, deterministic validation pass.
 # If rplidar_ros has not been built yet, build it once as well so lidar launch
 # paths work out-of-the-box on the Pi.
@@ -175,12 +212,14 @@ if [[ "$BUILD_SCOPE" == "all" ]]; then
 else
   colcon build --symlink-install --packages-select romi_base
 
-  if [[ ! -d install/rplidar_ros ]]; then
+  if [[ "$FORCE_RPLIDAR_REBUILD" == "true" ]]; then
+    echo "Forcing clean rplidar_ros rebuild..."
+    clean_rplidar_pkg
+    build_rplidar_pkg
+  elif [[ ! -d install/rplidar_ros ]]; then
     echo "rplidar_ros not found in install/. Building rplidar_ros once..."
-    # Clear any stale package-level artifacts before first build. This avoids
-    # linker/make issues when previous partial builds had clock skew.
-    rm -rf build/rplidar_ros install/rplidar_ros
-    colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache
+    clean_rplidar_pkg
+    build_rplidar_pkg
   else
     echo "rplidar_ros already present in install/. Skipping rebuild."
   fi
