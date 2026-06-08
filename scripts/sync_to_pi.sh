@@ -156,6 +156,12 @@ set -euo pipefail
 
 cd "$REMOTE_WS_CLEAN"
 
+# Offline Pi setups often drift in wall-clock time. Normalize file mtimes in
+# the active source tree before configuring/building to avoid clock skew errors.
+if [[ -d src ]]; then
+  find src -type f -exec touch {} +
+fi
+
 # ROS setup scripts can reference optional vars that are unset under nounset.
 # Temporarily disable nounset while sourcing them.
 set +u
@@ -171,7 +177,10 @@ else
 
   if [[ ! -d install/rplidar_ros ]]; then
     echo "rplidar_ros not found in install/. Building rplidar_ros once..."
-    colcon build --symlink-install --packages-select rplidar_ros
+    # Clear any stale package-level artifacts before first build. This avoids
+    # linker/make issues when previous partial builds had clock skew.
+    rm -rf build/rplidar_ros install/rplidar_ros
+    colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache
   else
     echo "rplidar_ros already present in install/. Skipping rebuild."
   fi
