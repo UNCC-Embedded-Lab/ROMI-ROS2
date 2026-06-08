@@ -174,50 +174,143 @@ fi
 set +u
 source "/opt/ros/${ROS_DISTRO_NAME}/setup.bash"
 
+ROMI_BUILD_STATUS="not-run"
+RPLIDAR_BUILD_STATUS="not-run"
+ALL_BUILD_STATUS="not-run"
+
+print_build_summary() {
+  echo "Build summary:"
+  echo "  all packages: ${ALL_BUILD_STATUS}"
+  echo "  romi_base: ${ROMI_BUILD_STATUS}"
+  echo "  rplidar_ros: ${RPLIDAR_BUILD_STATUS}"
+}
+
+run_colcon_build() {
+  local label="$1"
+  shift
+
+  local build_log
+  build_log=$(mktemp)
+
+  echo "Building ${label}..."
+  set +e
+  colcon build --symlink-install "$@" 2>&1 | tee "$build_log"
+  local build_rc=${PIPESTATUS[0]}
+  set -e
+
+  LAST_BUILD_LOG="$build_log"
+  return "$build_rc"
+}
+
 clean_rplidar_pkg() {
   rm -rf build/rplidar_ros install/rplidar_ros
 }
 
 build_rplidar_pkg() {
-  local build_log
-  build_log=$(mktemp)
-
-  set +e
-  colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache 2>&1 | tee "$build_log"
-  local build_rc=${PIPESTATUS[0]}
-  set -e
-
-  if [[ $build_rc -eq 0 ]]; then
-    rm -f "$build_log"
+  if run_colcon_build "rplidar_ros" --packages-select rplidar_ros --cmake-clean-cache; then
+    RPLIDAR_BUILD_STATUS="success"
+    rm -f "$LAST_BUILD_LOG"
     return 0
   fi
+
+  local build_log="$LAST_BUILD_LOG"
+  local build_rc=1
 
   if grep -E -q "undefined reference to .*main|Clock skew detected" "$build_log"; then
     echo "Detected stale or skewed rplidar_ros build artifacts; retrying with a clean package rebuild..."
     clean_rplidar_pkg
-    colcon build --symlink-install --packages-select rplidar_ros --cmake-clean-cache
+    if run_colcon_build "rplidar_ros (retry)" --packages-select rplidar_ros --cmake-clean-cache; then
+      RPLIDAR_BUILD_STATUS="success (after retry)"
+      rm -f "$build_log" "$LAST_BUILD_LOG"
+      return 0
+    fi
+
+    build_rc=1
+    rm -f "$build_log" "$LAST_BUILD_LOG"
+    RPLIDAR_BUILD_STATUS="failed"
+    return "$build_rc"
     rm -f "$build_log"
     return 0
+  rm -f "$build_log"
+  RPLIDAR_BUILD_STATUS="failed"
+  build_rc=1
+  return "$build_rc"
+}
+
+ensure_workspace_setup() {
+  if [[ -f install/setup.bash ]]; then
+    return 0
+  fi
+
+  echo "install/setup.bash is missing; running recovery build for romi_base..."
+  if ! run_colcon_build "romi_base (recovery)" --packages-select romi_base; then
+    rm -f "$LAST_BUILD_LOG"
+    ROMI_BUILD_STATUS="failed"
+    return 1
+  fi
+
+  rm -f "$LAST_BUILD_LOG"
+
+  if [[ ! -f install/setup.bash ]]; then
+    echo "install/setup.bash is still missing after recovery build."
+    ROMI_BUILD_STATUS="failed"
+    return 1
+  fi
+
+  ROMI_BUILD_STATUS="success (recovery)"
+  return 0
+}
+
   fi
 
   rm -f "$build_log"
   return "$build_rc"
-}
+  if run_colcon_build "all packages"; then
+    ALL_BUILD_STATUS="success"
+    rm -f "$LAST_BUILD_LOG"
+  else
+    ALL_BUILD_STATUS="failed"
+    rm -f "$LAST_BUILD_LOG"
+    print_build_summary
+    exit 1
+  fi
 
-# Build only romi_base by default for a faster, deterministic validation pass.
+  if run_colcon_build "romi_base" --packages-select romi_base; then
+    ROMI_BUILD_STATUS="success"
+    rm -f "$LAST_BUILD_LOG"
+  else
+    ROMI_BUILD_STATUS="failed"
+    rm -f "$LAST_BUILD_LOG"
+    print_build_summary
+    exit 1
+  fi
 # If rplidar_ros has not been built yet, build it once as well so lidar launch
 # paths work out-of-the-box on the Pi.
 if [[ "$BUILD_SCOPE" == "all" ]]; then
   colcon build --symlink-install
-else
+    if ! build_rplidar_pkg; then
+      print_build_summary
+      exit 1
+    fi
   colcon build --symlink-install --packages-select romi_base
 
   if [[ "$FORCE_RPLIDAR_REBUILD" == "true" ]]; then
-    echo "Forcing clean rplidar_ros rebuild..."
+    if ! build_rplidar_pkg; then
+      print_build_summary
+      exit 1
+    fi
     clean_rplidar_pkg
     build_rplidar_pkg
+    RPLIDAR_BUILD_STATUS="skipped (already present)"
   elif [[ ! -d install/rplidar_ros ]]; then
     echo "rplidar_ros not found in install/. Building rplidar_ros once..."
+
+if ! ensure_workspace_setup; then
+  print_build_summary
+  exit 1
+fi
+
+print_build_summary
     clean_rplidar_pkg
     build_rplidar_pkg
   else
