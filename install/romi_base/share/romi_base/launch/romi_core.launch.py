@@ -15,6 +15,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_description = LaunchConfiguration('use_description')
     use_rviz = LaunchConfiguration('use_rviz')
+    use_joint_state_publisher = LaunchConfiguration('use_joint_state_publisher')
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -31,6 +32,11 @@ def generate_launch_description():
             'use_rviz',
             default_value='false',
             description='Launch RViz with ROMI visualization config',
+        ),
+        DeclareLaunchArgument(
+            'use_joint_state_publisher',
+            default_value='true',
+            description='Run joint_state_publisher for model visualization',
         ),
         Node(
             package='romi_base',
@@ -52,6 +58,7 @@ def generate_launch_description():
             launch_arguments={
                 'use_simulation': 'false',
                 'use_sim_time': 'false',
+                'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
         IncludeLaunchDescription(
@@ -60,6 +67,7 @@ def generate_launch_description():
             launch_arguments={
                 'use_simulation': 'false',
                 'use_sim_time': 'false',
+                'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
     ])

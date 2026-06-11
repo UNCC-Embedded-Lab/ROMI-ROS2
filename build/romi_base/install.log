@@ -13,7 +13,6 @@
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_description.launch.py
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_robot.launch.py
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_gz.launch.py
-/root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_rviz_only.launch.py
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_rviz.launch.py
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/launch/romi_core.launch.py
 /root/ros2_ws/src/ROMI-ROS2/install/romi_base/share/romi_base/config/romi_params.yaml

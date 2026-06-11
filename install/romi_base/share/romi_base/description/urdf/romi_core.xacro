@@ -64,9 +64,9 @@
         <visual>
             <origin xyz="${chassis_length/2} 0 0"/>
             <geometry>
-                <mesh filename="package://romi_base/description/meshes/romi_chassis.stl" scale="1 1 1"/>
+                <mesh filename="file://$(find romi_base)/description/meshes/romi_chassis.stl" scale="1 1 1"/>
             </geometry>
-            <material name="blue"/>
+            <material name="orange"/>
         </visual>
         <collision>
             <origin xyz="${chassis_length/2} 0 ${chassis_height/2}"/>
@@ -97,7 +97,7 @@
     <link name="left_wheel">
         <visual>
             <geometry>
-                <mesh filename="package://romi_base/description/meshes/left_wheel2.stl" scale="1 1 1"/>
+                <mesh filename="file://$(find romi_base)/description/meshes/left_wheel2.stl" scale="1 1 1"/>
             </geometry>
             <material name="blue"/>
         </visual>
@@ -127,7 +127,7 @@
     <link name="right_wheel">
         <visual>
             <geometry>
-                <mesh filename="package://romi_base/description/meshes/right_wheel2.stl" scale="1 1 1"/>
+                <mesh filename="file://$(find romi_base)/description/meshes/right_wheel2.stl" scale="1 1 1"/>
             </geometry>
             <material name="blue"/>
         </visual>

@@ -20,7 +20,6 @@
     "-v",
     "/tmp/.Xauthority_devcontainer:/tmp/.Xauthority:ro"
   ],
-  "postCreateCommand": "bash -lc \"apt-get update && apt-get install -y ros-humble-ros-gz ros-humble-xacro ros-humble-teleop-twist-keyboard ros-humble-joint-state-publisher\"",
   "remoteEnv": {
     "ROS_DOMAIN_ID": "0",
     "ROS_LOCALHOST_ONLY": "0"
