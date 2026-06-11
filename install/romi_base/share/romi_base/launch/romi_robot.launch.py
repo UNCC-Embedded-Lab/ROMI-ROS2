@@ -15,12 +15,10 @@ def generate_launch_description():
 
     params_file = LaunchConfiguration('params_file')
     use_gazebo = LaunchConfiguration('use_gazebo')
-    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     gazebo_world = LaunchConfiguration('gazebo_world')
     use_lidar = LaunchConfiguration('use_lidar')
     use_description = LaunchConfiguration('use_description')
     use_rviz = LaunchConfiguration('use_rviz')
-    use_joint_state_publisher = LaunchConfiguration('use_joint_state_publisher')
     mode = LaunchConfiguration('mode')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     lidar_frame_id = LaunchConfiguration('lidar_frame_id')
@@ -35,11 +33,6 @@ def generate_launch_description():
             'use_gazebo',
             default_value='false',
             description='Run in Gazebo simulation instead of hardware bringup',
-        ),
-        DeclareLaunchArgument(
-            'use_gazebo_gui',
-            default_value='false',
-            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'gazebo_world',
@@ -62,11 +55,6 @@ def generate_launch_description():
             description='Launch RViz with ROMI visualization config',
         ),
         DeclareLaunchArgument(
-            'use_joint_state_publisher',
-            default_value='true',
-            description='Run joint_state_publisher for model visualization',
-        ),
-        DeclareLaunchArgument(
             'mode',
             default_value='none',
             description='Robot command source: none | obstacle_avoidance',
@@ -78,7 +66,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'lidar_frame_id',
-            default_value='laser',
+            default_value='lidar_frame',
             description='Frame id for LaserScan messages',
         ),
         Node(
@@ -111,7 +99,6 @@ def generate_launch_description():
             launch_arguments={
                 'use_simulation': 'false',
                 'use_sim_time': 'false',
-                'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
         IncludeLaunchDescription(
@@ -120,7 +107,6 @@ def generate_launch_description():
             launch_arguments={
                 'use_simulation': 'false',
                 'use_sim_time': 'false',
-                'use_joint_state_publisher': use_joint_state_publisher,
             }.items(),
         ),
         IncludeLaunchDescription(
@@ -130,7 +116,6 @@ def generate_launch_description():
                 'world': gazebo_world,
                 'mode': mode,
                 'use_rviz': use_rviz,
-                'use_gazebo_gui': use_gazebo_gui,
                 'rviz_config': f'{romi_pkg_share}/rviz/romi_base.rviz',
             }.items(),
         ),

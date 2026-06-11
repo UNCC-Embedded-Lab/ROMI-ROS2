@@ -5,30 +5,30 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('romi_base')
     ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
+    xacro_file = f'{pkg_share}/description/urdf/romi.urdf.xacro'
 
     world = LaunchConfiguration('world')
-    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     use_rviz = LaunchConfiguration('use_rviz')
     mode = LaunchConfiguration('mode')
     rviz_config = LaunchConfiguration('rviz_config')
+    robot_sdf = Command([
+        'bash -lc "',
+        f'xacro {xacro_file} use_simulation:=true > /tmp/romi_gz_spawn.urdf && gz sdf -p /tmp/romi_gz_spawn.urdf',
+        '"',
+    ])
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
             default_value=f'{pkg_share}/worlds/romi_simple_gz.sdf',
             description='Gazebo Sim world file',
-        ),
-        DeclareLaunchArgument(
-            'use_gazebo_gui',
-            default_value='false',
-            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'use_rviz',
@@ -48,17 +48,8 @@ def generate_launch_description():
         SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
-            condition=IfCondition(use_gazebo_gui),
             launch_arguments={
-                'gz_args': ['-r ', world],
-                'on_exit_shutdown': 'true',
-            }.items(),
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
-            condition=IfCondition(PythonExpression(["'", use_gazebo_gui, "' != 'true'"])),
-            launch_arguments={
-                'gz_args': ['-r -s ', world],
+                'gz_args': [world],
                 'on_exit_shutdown': 'true',
             }.items(),
         ),
@@ -66,7 +57,6 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
             launch_arguments={
                 'use_simulation': 'true',
-                'use_joint_state_publisher': 'false',
                 'use_sim_time': 'true',
             }.items(),
         ),
@@ -76,7 +66,7 @@ def generate_launch_description():
             name='spawn_romi_base',
             arguments=[
                 '-name', 'romi_base',
-                '-topic', 'robot_description',
+                '-string', robot_sdf,
                 '-z', '0.08',
             ],
             output='screen',
@@ -106,7 +96,7 @@ def generate_launch_description():
             package='rviz2',
             executable='rviz2',
             name='rviz2',
-            condition=IfCondition(PythonExpression(["'", use_rviz, "' == 'true' and '", use_gazebo_gui, "' == 'true'"])),
+            condition=IfCondition(use_rviz),
             arguments=['-d', rviz_config],
             parameters=[{'use_sim_time': True}],
             output='screen',

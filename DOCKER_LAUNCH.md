@@ -39,7 +39,7 @@ Inside the container, install dependencies and build once:
 ```bash
 source /opt/ros/humble/setup.bash
 apt-get update
-apt-get install -y ros-humble-ros-gz ros-humble-xacro ros-humble-teleop-twist-keyboard
+apt-get install -y ros-humble-ros-gz ros-humble-xacro ros-humble-teleop-twist-keyboard ros-humble-joint-state-publisher
 colcon build --symlink-install
 source install/setup.bash
 ```

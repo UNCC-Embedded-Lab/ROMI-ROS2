@@ -49,7 +49,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
             launch_arguments={
-                'gz_args': ['-r ', world],
+                'gz_args': [world],
                 'on_exit_shutdown': 'true',
             }.items(),
         ),
