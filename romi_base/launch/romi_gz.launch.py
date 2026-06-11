@@ -85,6 +85,17 @@ def generate_launch_description():
             ],
             output='screen',
         ),
+        # Ignition Gazebo 6 merges fixed URDF links into base_link during URDF->SDF
+        # conversion, so the lidar sensor ends up scoped as romi_base/base_link/laser.
+        # This static transform bridges that Ignition frame name to the URDF TF frame.
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='lidar_frame_bridge',
+            arguments=['0', '0', '0', '0', '0', '0', 'lidar_frame', 'romi_base/base_link/laser'],
+            parameters=[{'use_sim_time': True}],
+            output='screen',
+        ),
         Node(
             package='romi_base',
             executable='obstacle_avoidance',
