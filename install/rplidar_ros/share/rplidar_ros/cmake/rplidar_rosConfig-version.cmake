@@ -1,1 +1,0 @@
-/root/ros2_ws/src/ROMI-ROS2/build/rplidar_ros/ament_cmake_core/rplidar_rosConfig-version.cmake
