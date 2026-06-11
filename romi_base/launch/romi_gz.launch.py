@@ -20,7 +20,7 @@ def generate_launch_description():
     rviz_config = LaunchConfiguration('rviz_config')
     robot_sdf = Command([
         'bash -lc "',
-        f'xacro {xacro_file} use_simulation:=true > /tmp/romi_gz_spawn.urdf && gz sdf -p /tmp/romi_gz_spawn.urdf',
+        f'xacro {xacro_file} use_simulation:=true > /tmp/romi_gz_spawn.urdf && ign sdf -p /tmp/romi_gz_spawn.urdf',
         '"',
     ])
 
