@@ -15,6 +15,7 @@ def generate_launch_description():
 
     params_file = LaunchConfiguration('params_file')
     use_gazebo = LaunchConfiguration('use_gazebo')
+    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     gazebo_world = LaunchConfiguration('gazebo_world')
     use_lidar = LaunchConfiguration('use_lidar')
     use_description = LaunchConfiguration('use_description')
@@ -38,6 +39,11 @@ def generate_launch_description():
             'gazebo_world',
             default_value=f'{romi_pkg_share}/worlds/romi_simple_gz.sdf',
             description='World file for Gazebo when use_gazebo=true',
+        ),
+        DeclareLaunchArgument(
+            'use_gazebo_gui',
+            default_value='true',
+            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'use_lidar',
@@ -114,6 +120,7 @@ def generate_launch_description():
             condition=IfCondition(use_gazebo),
             launch_arguments={
                 'world': gazebo_world,
+                'use_gazebo_gui': use_gazebo_gui,
                 'mode': mode,
                 'use_rviz': use_rviz,
                 'rviz_config': f'{romi_pkg_share}/rviz/romi_base.rviz',

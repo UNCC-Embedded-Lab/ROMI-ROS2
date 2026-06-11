@@ -15,6 +15,7 @@ def generate_launch_description():
     xacro_file = f'{pkg_share}/description/urdf/romi.urdf.xacro'
 
     world = LaunchConfiguration('world')
+    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     use_rviz = LaunchConfiguration('use_rviz')
     mode = LaunchConfiguration('mode')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -29,6 +30,11 @@ def generate_launch_description():
             'world',
             default_value=f'{pkg_share}/worlds/romi_simple_gz.sdf',
             description='Gazebo Sim world file',
+        ),
+        DeclareLaunchArgument(
+            'use_gazebo_gui',
+            default_value='true',
+            description='Run Gazebo with GUI when true, server-only when false',
         ),
         DeclareLaunchArgument(
             'use_rviz',
@@ -48,8 +54,17 @@ def generate_launch_description():
         SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
+            condition=IfCondition(use_gazebo_gui),
             launch_arguments={
                 'gz_args': ['-r ', world],
+                'on_exit_shutdown': 'true',
+            }.items(),
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
+            condition=IfCondition(PythonExpression(["'", use_gazebo_gui, "' != 'true'"])),
+            launch_arguments={
+                'gz_args': ['-r -s ', world],
                 'on_exit_shutdown': 'true',
             }.items(),
         ),
