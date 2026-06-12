@@ -2,35 +2,26 @@
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('romi_base')
+    xacro_file = f'{pkg_share}/description/urdf/romi.urdf.xacro'
 
     params_file = LaunchConfiguration('params_file')
-    use_description = LaunchConfiguration('use_description')
-    use_rviz = LaunchConfiguration('use_rviz')
+
+    robot_description = {
+        'robot_description': Command(['xacro ', xacro_file, ' use_simulation:=false'])
+    }
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'params_file',
             default_value=f'{pkg_share}/config/romi_params.yaml',
             description='Path to ROMI parameter file',
-        ),
-        DeclareLaunchArgument(
-            'use_description',
-            default_value='true',
-            description='Launch robot_state_publisher and robot description',
-        ),
-        DeclareLaunchArgument(
-            'use_rviz',
-            default_value='false',
-            description='Launch RViz with ROMI visualization config',
         ),
         Node(
             package='romi_base',
@@ -46,20 +37,18 @@ def generate_launch_description():
             parameters=[params_file],
             output='screen',
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
-            condition=IfCondition(PythonExpression(["'", use_description, "' == 'true' and '", use_rviz, "' != 'true'"])),
-            launch_arguments={
-                'use_simulation': 'false',
-                'use_sim_time': 'false',
-            }.items(),
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            parameters=[robot_description, {'publish_robot_description': True, 'use_sim_time': False}],
+            output='screen',
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_rviz.launch.py'),
-            condition=IfCondition(use_rviz),
-            launch_arguments={
-                'use_simulation': 'false',
-                'use_sim_time': 'false',
-            }.items(),
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            parameters=[robot_description, {'use_gui': False, 'use_sim_time': False}],
+            output='screen',
         ),
     ])

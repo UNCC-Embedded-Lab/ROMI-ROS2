@@ -114,68 +114,102 @@ source install/setup.bash
 
 ## 5) Launch Examples
 
-Hardware (core stack):
+### On the Raspberry Pi
+
+Minimal hardware stack (no lidar):
 
 ```bash
 ros2 launch romi_base romi_core.launch.py
 ```
 
-RViz launcher:
+Full hardware stack with lidar:
 
 ```bash
-ros2 launch romi_base romi_rviz_only.launch.py
+ros2 launch romi_base romi_robot.launch.py
 ```
 
-Obstacle avoidance mode:
+Without lidar:
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py mode:=obstacle_avoidance use_lidar:=true
+ros2 launch romi_base romi_robot.launch.py use_lidar:=false
 ```
 
-In a second terminal, run keyboard teleop:
+### On the Laptop
+
+Open RViz pre-configured for ROMI topics:
+
+```bash
+ros2 launch romi_base romi_rviz.launch.py
+```
+
+Keyboard teleop (separate terminal):
 
 ```bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
-Simulation (with GUI, only if X11 is configured):
+Obstacle avoidance node (separate terminal):
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py use_gazebo:=true mode:=none use_rviz:=true
+ros2 run romi_base obstacle_avoidance
 ```
 
-Optional: override Gazebo world:
+### Simulation (laptop, requires X11 or Wayland display)
 
 ```bash
-ros2 launch romi_base romi_robot.launch.py \
-  use_gazebo:=true \
-  mode:=none \
-  use_rviz:=false \
-  gazebo_world:=/root/ros2_ws/src/ROMI-ROS2/romi_base/worlds/romi_simple_gz.sdf
+ros2 launch romi_base romi_gz.launch.py
 ```
 
-Note: `use_lidar:=true` requires `rplidar_ros` to be built and sourced.
+Without Gazebo GUI (headless):
 
-Note: This package now uses modern Gazebo Sim launch files only. The legacy Classic launch entry (`romi_gazebo.launch.py`) is intentionally removed.
+```bash
+ros2 launch romi_base romi_gz.launch.py use_gazebo_gui:=false
+```
+
+Override world file:
+
+```bash
+ros2 launch romi_base romi_gz.launch.py \
+  world:=/path/to/your_world.sdf
+```
+
+Note: `romi_robot.launch.py` requires `rplidar_ros` to be built and sourced when `use_lidar:=true` (the default).
 
 Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep teleop in a separate interactive terminal.
 
-## Main Launch Arguments
+## Launch Files
 
-- `mode`: `none` or `obstacle_avoidance`
-- `use_lidar`: `true` or `false`
-- `lidar_serial_port`: default `/dev/ttyUSB0`
-- `lidar_frame_id`: default `laser`
+| File | Runs on | Purpose |
+|---|---|---|
+| `romi_core.launch.py` | Pi | Minimal hardware stack: `astar_bridge`, `base_controller`, `robot_state_publisher`, `joint_state_publisher` |
+| `romi_robot.launch.py` | Pi | Full hardware stack: same as `romi_core` plus optional RPLidar |
+| `romi_gz.launch.py` | Laptop | Gazebo Sim with full robot simulation |
+| `romi_rviz.launch.py` | Laptop | RViz only, pre-configured for ROMI topics |
+
+## Launch Arguments
+
+### `romi_core.launch.py`
+
 - `params_file`: defaults to `config/romi_params.yaml`
-- `use_gazebo`: run Gazebo simulation instead of hardware stack
-- `gazebo_world`: world file path used when `use_gazebo:=true`
-- `use_description`: launch robot_state_publisher description stack
-- `use_rviz`: launch RViz visualization stack
-- `joint_state_publisher` is launched automatically whenever the description stack is launched
 
-Footnote: when running the GUI launch inside a container, make sure the host X server is available to the container. Before starting or rebuilding the container, run `xhost +si:localuser:root` on the host, and ensure the host `XAUTHORITY` variable points to a valid cookie file. Then pass `DISPLAY`, `XAUTHORITY`, and `/tmp/.X11-unix` through to the container.
+### `romi_robot.launch.py`
 
-If RViz shows an X authorization error in Docker, check that `echo $XAUTHORITY` on the host is non-empty, rebuild the container so the mount/env is refreshed, and rerun `xhost +si:localuser:root` on the host.
+- `params_file`: defaults to `config/romi_params.yaml`
+- `use_lidar`: `true` or `false` (default `true`)
+- `lidar_serial_port`: default `/dev/ttyUSB0`
+- `lidar_frame_id`: default `lidar_frame`
+
+### `romi_gz.launch.py`
+
+- `world`: path to Gazebo world SDF file
+- `use_gazebo_gui`: `true` or `false` (default `true`)
+- `use_rviz`: `true` or `false` (default `false`)
+- `rviz_config`: path to RViz config file
+
+### `romi_rviz.launch.py`
+
+- `use_sim_time`: `true` or `false` (default `false`)
+- `rviz_config`: path to RViz config file
 
 ## Description Assets
 

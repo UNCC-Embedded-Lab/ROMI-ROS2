@@ -17,13 +17,15 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
     use_rviz = LaunchConfiguration('use_rviz')
-    mode = LaunchConfiguration('mode')
     rviz_config = LaunchConfiguration('rviz_config')
     robot_sdf = Command([
         'bash -lc "',
         f'xacro {xacro_file} use_simulation:=true > /tmp/romi_gz_spawn.urdf && ign sdf -p /tmp/romi_gz_spawn.urdf',
         '"',
     ])
+    robot_description = {
+        'robot_description': Command(['xacro ', xacro_file, ' use_simulation:=true'])
+    }
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -46,11 +48,6 @@ def generate_launch_description():
             default_value=f'{pkg_share}/rviz/romi_base.rviz',
             description='Path to RViz config file',
         ),
-        DeclareLaunchArgument(
-            'mode',
-            default_value='none',
-            description='Robot command source: none | obstacle_avoidance',
-        ),
         SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(f'{ros_gz_sim_share}/launch/gz_sim.launch.py'),
@@ -68,12 +65,19 @@ def generate_launch_description():
                 'on_exit_shutdown': 'true',
             }.items(),
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{pkg_share}/launch/romi_description.launch.py'),
-            launch_arguments={
-                'use_simulation': 'true',
-                'use_sim_time': 'true',
-            }.items(),
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            parameters=[robot_description, {'publish_robot_description': True, 'use_sim_time': True}],
+            output='screen',
+        ),
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            parameters=[robot_description, {'use_gui': False, 'use_sim_time': True}],
+            output='screen',
         ),
         Node(
             package='ros_gz_sim',
@@ -109,13 +113,6 @@ def generate_launch_description():
             name='lidar_frame_bridge',
             arguments=['0', '0', '0', '0', '0', '0', 'lidar_frame', 'romi_base/base_link/laser'],
             parameters=[{'use_sim_time': True}],
-            output='screen',
-        ),
-        Node(
-            package='romi_base',
-            executable='obstacle_avoidance',
-            name='obstacle_avoidance_node',
-            condition=IfCondition(PythonExpression(["'", mode, "' == 'obstacle_avoidance'"])),
             output='screen',
         ),
         Node(

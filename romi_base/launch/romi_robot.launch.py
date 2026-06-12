@@ -5,24 +5,23 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     romi_pkg_share = get_package_share_directory('romi_base')
+    xacro_file = f'{romi_pkg_share}/description/urdf/romi.urdf.xacro'
 
     params_file = LaunchConfiguration('params_file')
-    use_gazebo = LaunchConfiguration('use_gazebo')
-    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
-    gazebo_world = LaunchConfiguration('gazebo_world')
     use_lidar = LaunchConfiguration('use_lidar')
-    use_description = LaunchConfiguration('use_description')
-    use_rviz = LaunchConfiguration('use_rviz')
-    mode = LaunchConfiguration('mode')
     lidar_serial_port = LaunchConfiguration('lidar_serial_port')
     lidar_frame_id = LaunchConfiguration('lidar_frame_id')
+
+    robot_description = {
+        'robot_description': Command(['xacro ', xacro_file, ' use_simulation:=false'])
+    }
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -31,39 +30,9 @@ def generate_launch_description():
             description='Path to ROMI parameter file',
         ),
         DeclareLaunchArgument(
-            'use_gazebo',
-            default_value='false',
-            description='Run in Gazebo simulation instead of hardware bringup',
-        ),
-        DeclareLaunchArgument(
-            'gazebo_world',
-            default_value=f'{romi_pkg_share}/worlds/romi_simple_gz.sdf',
-            description='World file for Gazebo when use_gazebo=true',
-        ),
-        DeclareLaunchArgument(
-            'use_gazebo_gui',
-            default_value='true',
-            description='Run Gazebo with GUI when true, server-only when false',
-        ),
-        DeclareLaunchArgument(
             'use_lidar',
             default_value='true',
             description='Launch RPLidar A1 node',
-        ),
-        DeclareLaunchArgument(
-            'use_description',
-            default_value='true',
-            description='Launch robot_state_publisher and robot description',
-        ),
-        DeclareLaunchArgument(
-            'use_rviz',
-            default_value='false',
-            description='Launch RViz with ROMI visualization config',
-        ),
-        DeclareLaunchArgument(
-            'mode',
-            default_value='none',
-            description='Robot command source: none | obstacle_avoidance',
         ),
         DeclareLaunchArgument(
             'lidar_serial_port',
@@ -80,7 +49,6 @@ def generate_launch_description():
             executable='astar_bridge',
             name='astar_bridge_node',
             parameters=[params_file],
-            condition=IfCondition(PythonExpression(["'", use_gazebo, "' != 'true'"])),
             output='screen',
         ),
         Node(
@@ -88,43 +56,21 @@ def generate_launch_description():
             executable='base_controller',
             name='base_controller_node',
             parameters=[params_file],
-            condition=IfCondition(PythonExpression(["'", use_gazebo, "' != 'true'"])),
             output='screen',
         ),
         Node(
-            package='romi_base',
-            executable='obstacle_avoidance',
-            name='obstacle_avoidance_node',
-            parameters=[params_file],
-            condition=IfCondition(PythonExpression(["'", mode, "' == 'obstacle_avoidance'"])),
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            parameters=[robot_description, {'publish_robot_description': True, 'use_sim_time': False}],
             output='screen',
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_description.launch.py'),
-            condition=IfCondition(PythonExpression(["'", use_description, "' == 'true' and '", use_rviz, "' != 'true' and '", use_gazebo, "' != 'true'"])),
-            launch_arguments={
-                'use_simulation': 'false',
-                'use_sim_time': 'false',
-            }.items(),
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_rviz.launch.py'),
-            condition=IfCondition(PythonExpression(["'", use_rviz, "' == 'true' and '", use_gazebo, "' != 'true'"])),
-            launch_arguments={
-                'use_simulation': 'false',
-                'use_sim_time': 'false',
-            }.items(),
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(f'{romi_pkg_share}/launch/romi_gz.launch.py'),
-            condition=IfCondition(use_gazebo),
-            launch_arguments={
-                'world': gazebo_world,
-                'use_gazebo_gui': use_gazebo_gui,
-                'mode': mode,
-                'use_rviz': use_rviz,
-                'rviz_config': f'{romi_pkg_share}/rviz/romi_base.rviz',
-            }.items(),
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            parameters=[robot_description, {'use_gui': False, 'use_sim_time': False}],
+            output='screen',
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -134,7 +80,7 @@ def generate_launch_description():
                     'rplidar_a1_launch.py',
                 ])
             ),
-            condition=IfCondition(PythonExpression(["'", use_lidar, "' == 'true' and '", use_gazebo, "' != 'true'"])),
+            condition=IfCondition(use_lidar),
             launch_arguments={
                 'serial_port': lidar_serial_port,
                 'frame_id': lidar_frame_id,
