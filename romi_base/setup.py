@@ -37,6 +37,7 @@ setup(
             'astar_bridge = romi_base.astar_bridge_node:main',
             'base_controller = romi_base.base_controller_node:main',
             'obstacle_avoidance = romi_base.obstacle_avoidance_node:main',
+            'square_test_node = romi_base.square_test_node:main',
         ],
     },
 )
