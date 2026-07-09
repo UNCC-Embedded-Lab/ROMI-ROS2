@@ -46,11 +46,11 @@ amcl:
     pf_err: 0.05                   # desired error in KLD sampling
     pf_z: 0.99                     # desired confidence in KLD sampling
 
-    # ── Update thresholds ─────────────────────────────────────────────────────
-    # Only run the filter when the robot has moved enough — avoids wasting CPU
-    # while stationary and prevents filter divergence from encoder noise.
-    update_min_d: 0.05             # minimum translation before update (m)
-    update_min_a: 0.1              # minimum rotation before update (rad, ~6°)
+    # Update thresholds — lower values mean AMCL triggers on smaller movements.
+    # A stationary robot will never update (by design); drive the robot slightly
+    # after launch to see the first particle cloud appear in RViz.
+    update_min_d: 0.02             # minimum translation before update (m)
+    update_min_a: 0.05             # minimum rotation before update (rad, ~3°)
     resample_interval: 1           # resample every N filter updates
 
     # ── Slow/fast average for particle injection (recovery) ───────────────────

@@ -36,8 +36,35 @@ Visualization Manager:
       Size (m): 0.02
       Style: Flat Squares
       Color: 0; 255; 0
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Enabled: true
+      Topic:
+        Value: /map
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 5
+      Alpha: 0.7
+      Draw Behind: false
+    - Class: nav2_rviz_plugins/ParticleCloud
+      Name: ParticleCloud
+      Enabled: true
+      Topic:
+        Value: /particle_cloud
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry
+      Enabled: false
+      Topic:
+        Value: /odom
+      Keep: 50
+      Shape: Arrow
   Global Options:
-    Fixed Frame: base_link
+    Fixed Frame: map
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
