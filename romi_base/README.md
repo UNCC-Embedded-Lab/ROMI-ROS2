@@ -156,6 +156,9 @@ ros2 run romi_base obstacle_avoidance
 
 ### Simulation (laptop, requires X11 or Wayland display)
 
+The default simulation world is an office-building interior (`romi_office_gz.sdf`) that contains
+walls, a hallway, and four rooms — suitable for testing AMCL localisation.
+
 ```bash
 ros2 launch romi_base romi_gz.launch.py
 ```
@@ -166,12 +169,47 @@ Without Gazebo GUI (headless):
 ros2 launch romi_base romi_gz.launch.py use_gazebo_gui:=false
 ```
 
-Override world file:
+Override world file (e.g. to go back to the simple open world):
 
 ```bash
 ros2 launch romi_base romi_gz.launch.py \
-  world:=/path/to/your_world.sdf
+  world:=$(ros2 pkg prefix romi_base)/share/romi_base/worlds/romi_simple_gz.sdf
 ```
+
+### AMCL Localisation (simulation)
+
+AMCL requires `nav2_map_server`, `nav2_amcl`, and `nav2_lifecycle_manager`:
+
+```bash
+sudo apt install ros-humble-nav2-map-server ros-humble-nav2-amcl ros-humble-nav2-lifecycle-manager
+```
+
+Run the simulation and localisation stacks in separate terminals:
+
+```bash
+# Terminal 1 — Gazebo simulation
+ros2 launch romi_base romi_gz.launch.py
+
+# Terminal 2 — AMCL localisation
+ros2 launch romi_base romi_amcl.launch.py
+```
+
+The robot spawns at the world origin (centre of the hallway). `set_initial_pose: true` in
+`config/amcl_params.yaml` initialises the particle cloud there automatically — no manual
+"2D Pose Estimate" click in RViz is needed.
+
+To visualise localisation, open RViz and add:
+- **Map** → topic `/map`
+- **LaserScan** → topic `/scan`
+- **PoseArray** → topic `/particle_cloud` (AMCL particles)
+
+Verify the full TF tree with:
+
+```bash
+ros2 run tf2_tools view_frames
+```
+
+Expected chain: `map → odom → base_link → chassis → lidar_frame`
 
 Note: `romi_robot.launch.py` requires `rplidar_ros` to be built and sourced when `use_lidar:=true` (the default).
 
@@ -183,7 +221,8 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 |---|---|---|
 | `romi_core.launch.py` | Pi | Minimal hardware stack: `astar_bridge`, `base_controller`, `robot_state_publisher`, `joint_state_publisher` |
 | `romi_robot.launch.py` | Pi | Full hardware stack: same as `romi_core` plus optional RPLidar |
-| `romi_gz.launch.py` | Laptop | Gazebo Sim with full robot simulation |
+| `romi_gz.launch.py` | Laptop | Gazebo Sim with full robot simulation (default world: office interior) |
+| `romi_amcl.launch.py` | Laptop | AMCL localisation: `map_server` + `amcl` + `lifecycle_manager` |
 | `romi_rviz.launch.py` | Laptop | RViz only, pre-configured for ROMI topics |
 
 ## Launch Arguments
@@ -206,6 +245,11 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - `use_rviz`: `true` or `false` (default `false`)
 - `rviz_config`: path to RViz config file
 
+### `romi_amcl.launch.py`
+
+- `map`: full path to a map YAML file (default: `maps/romi_office_map.yaml`)
+- `params_file`: full path to the params YAML file (default: `config/amcl_params.yaml`)
+
 ### `romi_rviz.launch.py`
 
 - `use_sim_time`: `true` or `false` (default `false`)
@@ -217,6 +261,22 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - Mesh files (STL): `description/meshes`
 - Source/attribution notes: `description/SOURCE.md`
 
+## Simulation Worlds
+
+| File | Description |
+|---|---|
+| `worlds/romi_office_gz.sdf` | Office interior: sealed 6 m × 6 m room with a central hallway, four rooms, and furniture. Default world for `romi_gz.launch.py`. Designed for AMCL testing. |
+| `worlds/romi_simple_gz.sdf` | Open flat ground with a few box obstacles. Useful for basic motion testing. |
+
+## Maps
+
+Pre-built 2D occupancy-grid maps for use with AMCL (`nav2_map_server`).
+
+| File | Description |
+|---|---|
+| `maps/romi_office_map.pgm` | Binary occupancy grid image matching `romi_office_gz.sdf` (160 × 160 px, 0.05 m/px) |
+| `maps/romi_office_map.yaml` | Map metadata: resolution, origin, threshold values |
+
 ## Parameters
 
 `config/romi_params.yaml` contains:
@@ -224,3 +284,10 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - ROMI geometry and control gains (`base_controller_node`)
 - encoder polling rate (`astar_bridge_node`)
 - obstacle behavior thresholds (`obstacle_avoidance_node`)
+
+`config/amcl_params.yaml` contains:
+
+- AMCL particle filter settings (particles, update thresholds, motion model noise)
+- Likelihood-field laser model settings tuned for the RPLidar A1
+- Initial pose at the world origin (hallway centre)
+- `map_server` and `lifecycle_manager` parameters
