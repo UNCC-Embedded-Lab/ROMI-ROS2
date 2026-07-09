@@ -30,7 +30,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value=f'{pkg_share}/worlds/romi_simple_gz.sdf',
+            default_value=f'{pkg_share}/worlds/romi_office_gz.sdf',
             description='Gazebo Sim world file',
         ),
         DeclareLaunchArgument(

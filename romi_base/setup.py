@@ -17,6 +17,7 @@ setup(
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
         (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
         (os.path.join('share', package_name, 'worlds'), glob('worlds/*.sdf')),
+        (os.path.join('share', package_name, 'maps'), glob('maps/*')),
         (os.path.join('share', package_name, 'description', 'urdf'), glob('description/urdf/*')),
         (os.path.join('share', package_name, 'description', 'meshes'), glob('description/meshes/*')),
         (os.path.join('share', package_name, 'description'), glob('description/*.md')),

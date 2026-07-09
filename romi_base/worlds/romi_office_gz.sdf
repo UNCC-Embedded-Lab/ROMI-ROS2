@@ -1,0 +1,507 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <!--
+    Office building interior world for Romi AMCL simulation.
+
+    Floor plan (6 m × 6 m, all dims in metres):
+
+        X: -3.06 ──────────────────────── +3.06
+        Y: +3.06 ┌──────────┬──────────┐
+                 │  Room A  │  Room B  │
+                 │ (NW)     │ (NE)     │
+        Y: +0.80 ├───  ─────┼─────  ───┤  ← doorways at X ≈ ±1.5
+                 │        Hallway       │
+        Y: -0.80 ├───  ─────┼─────  ───┤  ← doorways at X ≈ ±1.5
+                 │  Room C  │  Room D  │
+                 │ (SW)     │ (SE)     │
+        Y: -3.06 └──────────┴──────────┘
+
+    Robot spawns at (0, 0, ~0.07) — centre of the hallway.
+    RPLidar scans at ~0.14 m above ground; walls are 1.0 m tall → clearly detectable.
+    Central divider wall at X = 0 separates left/right rooms (no corridor gap).
+    Each room contains a desk and cabinet model for distinctive LiDAR features.
+  -->
+  <world name="romi_office_world">
+    <gravity>0 0 -9.8</gravity>
+
+    <plugin filename="ignition-gazebo6-physics-system"
+            name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo6-user-commands-system"
+            name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo6-scene-broadcaster-system"
+            name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo6-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Neutral indoor ambient (no harsh outdoor sun) -->
+    <scene>
+      <ambient>0.55 0.55 0.55 1</ambient>
+      <background>0.2 0.2 0.2 1</background>
+      <shadows>false</shadows>
+    </scene>
+
+    <!-- Overhead fill light simulating fluorescent ceiling panels -->
+    <light name="ceiling_light_main" type="directional">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 5 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <direction>0 0 -1</direction>
+      <attenuation>
+        <range>20</range>
+        <constant>0.8</constant>
+        <linear>0.02</linear>
+        <quadratic>0.0</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Soft fill from above to avoid harsh shadows -->
+    <light name="ceiling_light_fill" type="directional">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 4 0 0 0</pose>
+      <diffuse>0.4 0.4 0.4 1</diffuse>
+      <specular>0.0 0.0 0.0 1</specular>
+      <direction>0.1 0.1 -1</direction>
+      <attenuation>
+        <range>20</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.0</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- ───────── FLOOR ───────── -->
+    <model name="floor_plane">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10 10</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10 10</size>
+            </plane>
+          </geometry>
+          <material>
+            <!-- Light grey tile floor -->
+            <ambient>0.72 0.72 0.72 1</ambient>
+            <diffuse>0.72 0.72 0.72 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────
+         OUTER WALLS
+         Wall thickness: 0.12 m   Wall height: 1.0 m
+         Outer boundary: ±3.06 m  Inner boundary: ±3.00 m
+    ─────────────────────────────────────────────────────────────── -->
+
+    <!-- South outer wall — full width to seal corners -->
+    <model name="wall_outer_south">
+      <static>true</static>
+      <pose>0 -3.06 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>6.24 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>6.24 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- North outer wall — full width to seal corners -->
+    <model name="wall_outer_north">
+      <static>true</static>
+      <pose>0 3.06 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>6.24 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>6.24 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- West outer wall — spans full height incl. corner overlap -->
+    <model name="wall_outer_west">
+      <static>true</static>
+      <pose>-3.06 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.12 6.24 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.12 6.24 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East outer wall -->
+    <model name="wall_outer_east">
+      <static>true</static>
+      <pose>3.06 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.12 6.24 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.12 6.24 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────
+         NORTH CORRIDOR WALL  (Y = +0.80)
+         Three segments with two 0.80 m doorways:
+           Door A (Room A): gap X = −1.90 … −1.10  (centre X = −1.50)
+           Door B (Room B): gap X = +1.10 … +1.90  (centre X = +1.50)
+    ─────────────────────────────────────────────────────────────── -->
+
+    <!-- West segment: X = −3.06 … −1.90  len = 1.16 m  ctr = −2.48 -->
+    <model name="wall_hallway_north_west">
+      <static>true</static>
+      <pose>-2.48 0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Centre segment: X = −1.10 … +1.10  len = 2.20 m  ctr = 0 -->
+    <model name="wall_hallway_north_centre">
+      <static>true</static>
+      <pose>0 0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.20 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.20 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East segment: X = +1.90 … +3.06  len = 1.16 m  ctr = +2.48 -->
+    <model name="wall_hallway_north_east">
+      <static>true</static>
+      <pose>2.48 0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────
+         SOUTH CORRIDOR WALL  (Y = −0.80)
+         Mirror of north wall — same door positions.
+    ─────────────────────────────────────────────────────────────── -->
+
+    <model name="wall_hallway_south_west">
+      <static>true</static>
+      <pose>-2.48 -0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_hallway_south_centre">
+      <static>true</static>
+      <pose>0 -0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.20 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.20 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_hallway_south_east">
+      <static>true</static>
+      <pose>2.48 -0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.16 0.12 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────
+         CENTRAL NORTH–SOUTH DIVIDER  (X = 0)
+         Divides Room A from Room B, and Room C from Room D.
+         Two segments — the hallway gap (Y = −0.80 … +0.80) is open.
+           North section: Y = +0.80 … +3.00  len = 2.20 m  ctr = +1.90
+           South section: Y = −3.00 … −0.80  len = 2.20 m  ctr = −1.90
+    ─────────────────────────────────────────────────────────────── -->
+
+    <model name="wall_divider_north">
+      <static>true</static>
+      <pose>0 1.9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.12 2.20 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.12 2.20 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_divider_south">
+      <static>true</static>
+      <pose>0 -1.9 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.12 2.20 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.12 2.20 1.0</size></box></geometry>
+          <material>
+            <ambient>0.91 0.89 0.84 1</ambient>
+            <diffuse>0.91 0.89 0.84 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────
+         ROOM FURNITURE
+         Each room has a tall cabinet (corner) and a desk (back wall).
+         Both are 1.0 m tall → visible to the RPLidar at ~0.14 m.
+         Distinct positions in each room provide unique LiDAR signatures
+         that help AMCL distinguish one room from another.
+
+         Room A  (NW): X ∈ [−3.00, 0.00]  Y ∈ [+0.80, +3.00]
+         Room B  (NE): X ∈ [ 0.00, +3.00]  Y ∈ [+0.80, +3.00]
+         Room C  (SW): X ∈ [−3.00, 0.00]  Y ∈ [−3.00, −0.80]
+         Room D  (SE): X ∈ [ 0.00, +3.00]  Y ∈ [−3.00, −0.80]
+    ─────────────────────────────────────────────────────────────── -->
+
+    <!-- Room A — corner filing cabinet -->
+    <model name="furniture_A_cabinet">
+      <static>true</static>
+      <pose>-2.50 2.55 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+          <material>
+            <ambient>0.38 0.38 0.48 1</ambient>
+            <diffuse>0.38 0.38 0.48 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room A — desk along north wall -->
+    <model name="furniture_A_desk">
+      <static>true</static>
+      <pose>-1.30 2.65 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+          <material>
+            <ambient>0.50 0.43 0.34 1</ambient>
+            <diffuse>0.50 0.43 0.34 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room B — corner filing cabinet -->
+    <model name="furniture_B_cabinet">
+      <static>true</static>
+      <pose>2.50 2.55 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+          <material>
+            <ambient>0.38 0.38 0.48 1</ambient>
+            <diffuse>0.38 0.38 0.48 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room B — desk along north wall -->
+    <model name="furniture_B_desk">
+      <static>true</static>
+      <pose>1.30 2.65 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+          <material>
+            <ambient>0.50 0.43 0.34 1</ambient>
+            <diffuse>0.50 0.43 0.34 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room C — corner filing cabinet -->
+    <model name="furniture_C_cabinet">
+      <static>true</static>
+      <pose>-2.50 -2.55 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+          <material>
+            <ambient>0.38 0.38 0.48 1</ambient>
+            <diffuse>0.38 0.38 0.48 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room C — desk along south wall -->
+    <model name="furniture_C_desk">
+      <static>true</static>
+      <pose>-1.30 -2.65 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+          <material>
+            <ambient>0.50 0.43 0.34 1</ambient>
+            <diffuse>0.50 0.43 0.34 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room D — corner filing cabinet -->
+    <model name="furniture_D_cabinet">
+      <static>true</static>
+      <pose>2.50 -2.55 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.45 0.45 1.0</size></box></geometry>
+          <material>
+            <ambient>0.38 0.38 0.48 1</ambient>
+            <diffuse>0.38 0.38 0.48 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room D — desk along south wall -->
+    <model name="furniture_D_desk">
+      <static>true</static>
+      <pose>1.30 -2.65 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.10 0.40 1.0</size></box></geometry>
+          <material>
+            <ambient>0.50 0.43 0.34 1</ambient>
+            <diffuse>0.50 0.43 0.34 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
