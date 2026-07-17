@@ -224,13 +224,8 @@ build_rplidar_pkg() {
       rm -f "$build_log" "$LAST_BUILD_LOG"
       return 0
     fi
+  fi
 
-    build_rc=1
-    rm -f "$build_log" "$LAST_BUILD_LOG"
-    RPLIDAR_BUILD_STATUS="failed"
-    return "$build_rc"
-    rm -f "$build_log"
-    return 0
   rm -f "$build_log"
   RPLIDAR_BUILD_STATUS="failed"
   build_rc=1
@@ -261,10 +256,7 @@ ensure_workspace_setup() {
   return 0
 }
 
-  fi
-
-  rm -f "$build_log"
-  return "$build_rc"
+if [[ "$BUILD_SCOPE" == "all" ]]; then
   if run_colcon_build "all packages"; then
     ALL_BUILD_STATUS="success"
     rm -f "$LAST_BUILD_LOG"
@@ -274,7 +266,7 @@ ensure_workspace_setup() {
     print_build_summary
     exit 1
   fi
-
+else
   if run_colcon_build "romi_base" --packages-select romi_base; then
     ROMI_BUILD_STATUS="success"
     rm -f "$LAST_BUILD_LOG"
@@ -284,26 +276,26 @@ ensure_workspace_setup() {
     print_build_summary
     exit 1
   fi
-# If rplidar_ros has not been built yet, build it once as well so lidar launch
-# paths work out-of-the-box on the Pi.
-if [[ "$BUILD_SCOPE" == "all" ]]; then
-  colcon build --symlink-install
-    if ! build_rplidar_pkg; then
-      print_build_summary
-      exit 1
-    fi
-  colcon build --symlink-install --packages-select romi_base
 
+  # If rplidar_ros has not been built yet, build it once as well so lidar launch
+  # paths work out-of-the-box on the Pi.
   if [[ "$FORCE_RPLIDAR_REBUILD" == "true" ]]; then
+    clean_rplidar_pkg
     if ! build_rplidar_pkg; then
       print_build_summary
       exit 1
     fi
-    clean_rplidar_pkg
-    build_rplidar_pkg
-    RPLIDAR_BUILD_STATUS="skipped (already present)"
   elif [[ ! -d install/rplidar_ros ]]; then
     echo "rplidar_ros not found in install/. Building rplidar_ros once..."
+    if ! build_rplidar_pkg; then
+      print_build_summary
+      exit 1
+    fi
+  else
+    echo "rplidar_ros already present in install/. Skipping rebuild."
+    RPLIDAR_BUILD_STATUS="skipped (already present)"
+  fi
+fi
 
 if ! ensure_workspace_setup; then
   print_build_summary
@@ -311,12 +303,6 @@ if ! ensure_workspace_setup; then
 fi
 
 print_build_summary
-    clean_rplidar_pkg
-    build_rplidar_pkg
-  else
-    echo "rplidar_ros already present in install/. Skipping rebuild."
-  fi
-fi
 
 # Validate that Python package metadata exists so ros2 launch entry points resolve.
 source install/setup.bash

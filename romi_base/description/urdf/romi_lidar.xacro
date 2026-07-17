@@ -4,7 +4,7 @@
     <joint name="laser_joint" type="fixed">
         <parent link="chassis"/>
         <child link="lidar_frame"/>
-        <origin xyz="${chassis_length/2} 0 0.105" rpy="${pi} 0 0"/>
+        <origin xyz="${chassis_length/2} 0 0.105" rpy="0 0 0"/>
     </joint>
 
     <link name="lidar_frame">
