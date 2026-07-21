@@ -1,0 +1,18 @@
+base_controller_node:
+  ros__parameters:
+    wheel_base_m: 0.1397
+    wheel_diameter_m: 0.07
+    ticks_per_rev_wheel: 1440.0
+    kp: 600.0
+    ki: 400.0
+    max_pwm: 300.0
+
+astar_bridge_node:
+  ros__parameters:
+    encoder_rate_hz: 50.0
+
+obstacle_avoidance_node:
+  ros__parameters:
+    forward_speed: 0.20
+    turning_speed: 1.0
+    safe_dist: 0.5
