@@ -191,7 +191,7 @@ Run the simulation and localisation stacks in separate terminals:
 ros2 launch romi_base romi_gz.launch.py
 
 # Terminal 2 — AMCL localisation
-ros2 launch romi_base romi_amcl.launch.py
+ros2 launch romi_base romi_amcl_sim.launch.py
 ```
 
 The robot spawns at the world origin (centre of the hallway). `set_initial_pose: true` in
@@ -222,7 +222,7 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 | `romi_core.launch.py` | Pi | Minimal hardware stack: `astar_bridge`, `base_controller`, `robot_state_publisher`, `joint_state_publisher` |
 | `romi_robot.launch.py` | Pi | Full hardware stack: same as `romi_core` plus optional RPLidar |
 | `romi_gz.launch.py` | Laptop | Gazebo Sim with full robot simulation (default world: office interior) |
-| `romi_amcl.launch.py` | Laptop | AMCL localisation: `map_server` + `amcl` + `lifecycle_manager` |
+| `romi_amcl_sim.launch.py` | Laptop | AMCL localisation (simulation only): `map_server` + `amcl` + `lifecycle_manager` |
 | `romi_rviz.launch.py` | Laptop | RViz only, pre-configured for ROMI topics |
 
 ## Launch Arguments
@@ -245,7 +245,7 @@ Note: Launch files do not start `teleop_twist_keyboard` automatically. Keep tele
 - `use_rviz`: `true` or `false` (default `false`)
 - `rviz_config`: path to RViz config file
 
-### `romi_amcl.launch.py`
+### `romi_amcl_sim.launch.py`
 
 - `map`: full path to a map YAML file (default: `maps/romi_office_map.yaml`)
 - `params_file`: full path to the params YAML file (default: `config/amcl_params.yaml`)

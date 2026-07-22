@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
-romi_amcl.launch.py
--------------------
-Launches nav2 map_server + AMCL localisation for the Romi robot.
+romi_amcl_sim.launch.py
+-----------------------
+Launches nav2 map_server + AMCL localisation for the Romi robot IN SIMULATION.
+
+This launch file is sim-only: the accompanying config/amcl_params.yaml sets
+use_sim_time: true and a fixed initial_pose at the world origin, both of which
+match the Gazebo world and will NOT work on the real robot as-is.
 
 Run AFTER (or alongside) romi_gz.launch.py:
 
@@ -10,7 +14,7 @@ Run AFTER (or alongside) romi_gz.launch.py:
   ros2 launch romi_base romi_gz.launch.py
 
   # Terminal 2 — localisation
-  ros2 launch romi_base romi_amcl.launch.py
+  ros2 launch romi_base romi_amcl_sim.launch.py
 
 The lifecycle_manager will automatically configure and activate both
 map_server and amcl, so no manual lifecycle calls are needed.
