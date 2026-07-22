@@ -12,17 +12,15 @@
 # set its time to match. Run it once after connecting to the robot's WiFi (and
 # again if you leave the Pi powered for a long session).
 #
-# If the robot stack is started by a systemd service at boot (see
-# scripts/install_robot_service.sh), those nodes latched onto the Pi's wrong
-# boot-time clock. Simply stepping the clock underneath them causes TF jumps,
-# so this script also restarts that service afterwards so the ROS nodes come
-# back up with the corrected time. The restart is skipped gracefully if the
-# service is not installed.
+# This script does NOT start/restart any ROS nodes or services on the Pi — it
+# only corrects the clock. Launch/relaunch romi_robot.launch.py yourself
+# afterwards so the control loop starts fresh with the corrected time (stepping
+# the clock underneath an already-running control loop can cause a bogus large
+# dt in its PID math).
 #
 # Usage:
-#   ./scripts/sync_pi_clock.sh                 # sync + restart robot service
+#   ./scripts/sync_pi_clock.sh                 # sync the clock
 #   ./scripts/sync_pi_clock.sh --host 10.0.0.5 --user pi
-#   ./scripts/sync_pi_clock.sh --no-restart    # sync clock only
 #   PI_HOST=192.168.4.1 ./scripts/sync_pi_clock.sh --hwclock
 #
 # Requires: passwordless SSH to the Pi is convenient but not required (you may
@@ -36,8 +34,6 @@ set -euo pipefail
 PI_USER="${PI_USER:-student}"
 PI_HOST="${PI_HOST:-192.168.4.1}"
 WRITE_HWCLOCK="false"
-RESTART_SERVICE="${RESTART_SERVICE:-romi_robot.service}"
-DO_RESTART="true"
 INSTALL_SUDOERS="false"
 
 # Max tolerated laptop<->Pi offset (seconds) after syncing. ROS 2 TF cares about
@@ -47,18 +43,15 @@ MAX_OFFSET_SEC="${MAX_OFFSET_SEC:-2}"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--host HOST] [--user USER] [--hwclock] [--service NAME] [--no-restart]
+Usage: $(basename "$0") [--host HOST] [--user USER] [--hwclock] [--install-sudoers]
 
-Push this laptop's current time onto the robot's Raspberry Pi over SSH, then
-restart the robot systemd service so its ROS nodes use the corrected time.
+Push this laptop's current time onto the robot's Raspberry Pi over SSH.
 
 Options:
   --host HOST     Override the Pi host.  Default: ${PI_HOST}
   --user USER     Override the SSH user. Default: ${PI_USER}
   --hwclock       Also write the synced time to the Pi's hardware RTC (best
                   effort; only useful if the Pi actually has an RTC module).
-  --service NAME  Robot service to restart after sync. Default: ${RESTART_SERVICE}
-  --no-restart    Sync the clock only; do not restart any service.
   --install-sudoers
                   One-time setup: install a scoped /etc/sudoers.d rule so the
                   clock commands run without a password. This removes the sudo
@@ -66,7 +59,7 @@ Options:
   -h, --help      Show this help.
 
 Environment overrides:
-  PI_USER, PI_HOST, RESTART_SERVICE
+  PI_USER, PI_HOST
 EOF
 }
 
@@ -83,14 +76,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --hwclock)
       WRITE_HWCLOCK="true"
-      shift
-      ;;
-    --service)
-      RESTART_SERVICE="$2"
-      shift 2
-      ;;
-    --no-restart)
-      DO_RESTART="false"
       shift
       ;;
     --install-sudoers)
@@ -150,7 +135,7 @@ if [[ "$INSTALL_SUDOERS" == "true" ]]; then
   SUDOERS_CONTENT="# Managed by scripts/sync_pi_clock.sh --install-sudoers
 # Lets ${PI_USER} correct the system clock without a password so time sync is
 # not skewed by password-entry latency. Scoped to clock-related commands only.
-Cmnd_Alias ROMI_CLOCK = /usr/bin/date, /bin/date, /usr/bin/timedatectl, /bin/timedatectl, /usr/sbin/hwclock, /sbin/hwclock, /usr/sbin/fake-hwclock, /usr/bin/fake-hwclock, /usr/bin/touch ${TS_CLOCK}, /bin/touch ${TS_CLOCK}, /usr/bin/mkdir -p ${TS_DIR}, /bin/mkdir -p ${TS_DIR}, /usr/bin/systemctl restart ${RESTART_SERVICE}, /bin/systemctl restart ${RESTART_SERVICE}
+Cmnd_Alias ROMI_CLOCK = /usr/bin/date, /bin/date, /usr/bin/timedatectl, /bin/timedatectl, /usr/sbin/hwclock, /sbin/hwclock, /usr/sbin/fake-hwclock, /usr/bin/fake-hwclock, /usr/bin/touch ${TS_CLOCK}, /bin/touch ${TS_CLOCK}, /usr/bin/mkdir -p ${TS_DIR}, /bin/mkdir -p ${TS_DIR}
 ${PI_USER} ALL=(root) NOPASSWD: ROMI_CLOCK
 "
   SUDOERS_B64="$(printf '%s' "$SUDOERS_CONTENT" | base64 | tr -d '\n')"
@@ -246,19 +231,6 @@ fi
 if [[ "${PERSISTED}" != "true" ]]; then
   echo "  WARNING: no reboot-persistent time store found; clock will drift on reboot"
 fi
-
-# Restart the robot service so nodes that booted with the wrong clock restart
-# with the corrected time. `systemctl cat` returns non-zero when the unit does
-# not exist, so this stays robust whether or not the service is installed.
-if [[ "${DO_RESTART}" != "true" ]]; then
-  echo "  service restart skipped (--no-restart)"
-elif systemctl cat "${RESTART_SERVICE}" >/dev/null 2>&1; then
-  echo "  restarting ${RESTART_SERVICE} so ROS nodes pick up the new time..."
-  sudo systemctl restart "${RESTART_SERVICE}"
-  echo "  ${RESTART_SERVICE} restarted"
-else
-  echo "  ${RESTART_SERVICE} not installed; skipping restart"
-fi
 EOF
 )"
 
@@ -270,8 +242,6 @@ REMOTE_B64="$(printf '%s' "$REMOTE_BODY" | base64 | tr -d '\n')"
 REMOTE_CMD="echo '${REMOTE_B64}' | base64 -d |"
 REMOTE_CMD="${REMOTE_CMD} LAPTOP_EPOCH='${LAPTOP_EPOCH}'"
 REMOTE_CMD="${REMOTE_CMD} WRITE_HWCLOCK='${WRITE_HWCLOCK}'"
-REMOTE_CMD="${REMOTE_CMD} DO_RESTART='${DO_RESTART}'"
-REMOTE_CMD="${REMOTE_CMD} RESTART_SERVICE='${RESTART_SERVICE}'"
 REMOTE_CMD="${REMOTE_CMD} bash"
 
 ssh -t "${SSH_OPTS[@]}" "$REMOTE" "$REMOTE_CMD"
