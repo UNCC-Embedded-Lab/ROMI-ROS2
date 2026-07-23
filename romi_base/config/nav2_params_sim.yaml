@@ -1,33 +1,25 @@
 ########################################################################################
-# Romi-sized nav2 params -- REAL ROBOT ONLY (use_sim_time: False throughout).
+# Romi-sized nav2 params -- GAZEBO SIMULATION ONLY (use_sim_time: True throughout).
 #
-# For Gazebo simulation, use the sibling file config/nav2_params_sim.yaml instead
-# (use_sim_time: True throughout, to sync with Gazebo's /clock).
+# For the real robot, use the sibling file config/nav2_params.yaml instead
+# (use_sim_time: False throughout).
 #
-# Based on nav2_bringup's stock nav2_params.yaml, with the footprint/inflation
-# values changed for this robot's actual size:
+# Same footprint/inflation/AMCL tuning as nav2_params.yaml -- see that file's
+# inline comments for the rationale behind each value. Only use_sim_time differs
+# between the two files.
 #
-#   Chassis (romi_base/description/urdf/romi_core.xacro): 0.163m x 0.144m
-#     -> circumscribed circle radius ~= 0.109m, rounded up to robot_radius: 0.11
-#
-# The stock defaults (robot_radius: 0.22, inflation_radius: 0.55) are sized for a
-# TurtleBot3-class robot (~0.44m diameter) and massively over-inflate obstacles for the
-# much smaller Romi, making narrow maze corridors look blocked in the costmap.
-#
-# use_sim_time is baked in as False here (not just passed on the CLI) so this file is
-# correct even if someone loads it without an explicit use_sim_time:=false override.
-#
-# Use with:
-#   ros2 launch nav2_bringup localization_launch.py use_sim_time:=false \
-#     map:=$HOME/map.yaml \
+# Run alongside romi_gz.launch.py so Gazebo's /clock is available to sync to:
+#   ros2 launch romi_base romi_gz.launch.py
+#   ros2 launch nav2_bringup localization_launch.py use_sim_time:=true \
+#     map:=<path-to-map.yaml> \
 #     params_file:=<path-to-this-file>
-#   ros2 launch nav2_bringup navigation_launch.py use_sim_time:=false \
+#   ros2 launch nav2_bringup navigation_launch.py use_sim_time:=true \
 #     params_file:=<path-to-this-file>
 ########################################################################################
 
 amcl:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     alpha1: 0.05
     alpha2: 0.05
     alpha3: 0.05
@@ -105,7 +97,7 @@ amcl:
 
 bt_navigator:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
@@ -166,15 +158,15 @@ bt_navigator:
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 controller_server:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
@@ -265,7 +257,7 @@ local_costmap:
       publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
-      use_sim_time: False
+      use_sim_time: True
       rolling_window: true
       width: 3
       height: 3
@@ -319,7 +311,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      use_sim_time: False
+      use_sim_time: True
       # Romi's actual size -- see local_costmap.robot_radius comment above.
       robot_radius: 0.11
       resolution: 0.05
@@ -351,14 +343,14 @@ global_costmap:
 
 map_server:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
     yaml_filename: ""
 
 map_saver:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     save_map_timeout: 5.0
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
@@ -367,7 +359,7 @@ map_saver:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    use_sim_time: False
+    use_sim_time: True
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
@@ -381,7 +373,7 @@ planner_server:
 
 smoother_server:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     smoother_plugins: ["simple_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
@@ -408,7 +400,7 @@ behavior_server:
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
-    use_sim_time: false
+    use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
@@ -416,11 +408,11 @@ behavior_server:
 
 robot_state_publisher:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
 
 waypoint_follower:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     loop_rate: 20
     stop_on_failure: false
     waypoint_task_executor_plugin: "wait_at_waypoint"
@@ -431,7 +423,7 @@ waypoint_follower:
 
 velocity_smoother:
   ros__parameters:
-    use_sim_time: False
+    use_sim_time: True
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
