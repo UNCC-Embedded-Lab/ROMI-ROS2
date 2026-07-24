@@ -206,8 +206,8 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.1
+      yaw_goal_tolerance: 0.1
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -233,7 +233,11 @@ controller_server:
       decel_lim_theta: -3.2
       vx_samples: 20
       vy_samples: 5
-      vtheta_samples: 20
+      # Stock default (20) is a coarser sample of the rotation-rate range.
+      # Finer resolution gives DWB a better chance of finding a smoothly
+      # valid turning trajectory in a tight corner instead of only very
+      # coarse steps that may all graze the wall on one side.
+      vtheta_samples: 40
       # Stock default (1.7s) projects trajectories up to ~44cm ahead at full
       # speed -- often further than a tight maze corridor runs before a turn,
       # so most/all sampled trajectories clip a wall and get rejected, leaving
@@ -247,11 +251,21 @@ controller_server:
       short_circuit_trajectory_evaluation: True
       stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
+      # Stock default (0.02) is very low relative to the path/goal alignment
+      # weights below, so DWB barely prefers keeping clearance from walls
+      # while following the path -- it will hug a wall right up until a turn
+      # is needed, at which point many rotation directions become outright
+      # collisions, leaving only a narrow/awkward option. Raising this makes
+      # the planner proactively keep more clearance before it ever needs to
+      # turn near a wall.
+      BaseObstacle.scale: 0.2
       PathAlign.scale: 32.0
-      PathAlign.forward_point_distance: 0.1
+      # Stock default (0.1m) checks alignment at a point very close to the
+      # robot -- near a corner that's easily ambiguous/noisy. Looking a bit
+      # further ahead gives a more stable signal for which way to turn.
+      PathAlign.forward_point_distance: 0.2
       GoalAlign.scale: 24.0
-      GoalAlign.forward_point_distance: 0.1
+      GoalAlign.forward_point_distance: 0.2
       PathDist.scale: 32.0
       GoalDist.scale: 24.0
       RotateToGoal.scale: 32.0
