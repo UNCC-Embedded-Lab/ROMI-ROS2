@@ -1,6 +1,8 @@
 #include <Servo.h>
 #include <Romi32U4.h>
 #include <PololuRPiSlave.h>
+#include <Wire.h>
+#include <LSM6.h>
 
 /* This example program shows how to make the Romi 32U4 Control Board 
  * into a Raspberry Pi I2C slave.  The RPi and Romi 32U4 Control Board can
@@ -37,6 +39,14 @@ struct Data
   char notes[14];
 
   int16_t leftEncoder, rightEncoder;
+
+  // Raw IMU readings (LSM6DS33 on the Romi 32U4 Control Board).
+  // accel is in units of milli-g (scale depends on the configured
+  // full-scale range; default enableDefault() range is +-2 g,
+  // 0.061 mg/LSB).  gyro is in units of milli-dps (default
+  // enableDefault() range is +-245 dps, 8.75 mdps/LSB).
+  int16_t accel[3];
+  int16_t gyro[3];
 };
 
 PololuRPiSlave<struct Data,5> slave;
@@ -46,11 +56,24 @@ Romi32U4ButtonA buttonA;
 Romi32U4ButtonB buttonB;
 Romi32U4ButtonC buttonC;
 Romi32U4Encoders encoders;
+LSM6 imu;
+bool imuDetected = false;
 
 void setup()
 {
   // Set up the slave at I2C address 20.
   slave.init(20);
+
+  // Initialize the onboard LSM6DS33 accelerometer/gyro.  This uses the
+  // AVR's hardware I2C (Wire) as master, which is independent of the
+  // software I2C slave interface used to talk to the Raspberry Pi, so
+  // both can run at the same time.
+  Wire.begin();
+  imuDetected = imu.init();
+  if (imuDetected)
+  {
+    imu.enableDefault();
+  }
 
   // Play startup sound.
   buzzer.play("v10>>g16>>>c16");
@@ -98,6 +121,17 @@ void loop()
 
   slave.buffer.leftEncoder = encoders.getCountsLeft();
   slave.buffer.rightEncoder = encoders.getCountsRight();
+
+  if (imuDetected)
+  {
+    imu.read();
+    slave.buffer.accel[0] = imu.a.x;
+    slave.buffer.accel[1] = imu.a.y;
+    slave.buffer.accel[2] = imu.a.z;
+    slave.buffer.gyro[0] = imu.g.x;
+    slave.buffer.gyro[1] = imu.g.y;
+    slave.buffer.gyro[2] = imu.g.z;
+  }
 
   // When you are done WRITING, call finalizeWrites() to make modified
   // data available to I2C master.

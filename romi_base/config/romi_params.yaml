@@ -10,6 +10,8 @@ base_controller_node:
 astar_bridge_node:
   ros__parameters:
     encoder_rate_hz: 50.0
+    imu_rate_hz: 50.0
+    imu_frame_id: base_link
 
 obstacle_avoidance_node:
   ros__parameters:
