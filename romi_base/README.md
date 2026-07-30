@@ -35,7 +35,8 @@ If your ROMI control board is not already flashed:
 1. Install Arduino IDE.
 2. Add Pololu board manager URL in Arduino IDE:
    `https://files.pololu.com/arduino/package_pololu_index.json`
-3. Install `Pololu A-Star Boards` and `Romi32U4` library.
+3. Install `Pololu A-Star Boards`, `Romi32U4` library, and `LSM6` library
+   (the LSM6 library is required to read the onboard accelerometer/gyro).
 4. Open and upload:
    `lab_assets/arduino/RomiRPiSlaveDemo/RomiRPiSlaveDemo.ino`
 
