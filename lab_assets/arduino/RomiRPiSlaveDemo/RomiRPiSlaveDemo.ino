@@ -1,8 +1,6 @@
 #include <Servo.h>
 #include <Romi32U4.h>
 #include <PololuRPiSlave.h>
-#include <Wire.h>
-#include <LSM6.h>
 
 /* This example program shows how to make the Romi 32U4 Control Board 
  * into a Raspberry Pi I2C slave.  The RPi and Romi 32U4 Control Board can
@@ -19,6 +17,23 @@
  * available in that repository under the pi/ subfolder.  The Pi code
  * sets up a simple Python-based web application as a control panel
  * for your Raspberry Pi robot.
+ *
+ * NOTE ON THE ONBOARD LSM6DS33 IMU:
+ * This sketch intentionally does NOT read the IMU here, and does not
+ * include <Wire.h> or <LSM6.h>.  PololuRPiSlave implements its own
+ * interrupt-driven TWI *slave* handler (PololuTWISlave.cpp), which
+ * installs the same ISR(TWI_vect) hardware interrupt vector that the
+ * standard Wire library's twi.c installs for TWI *master* mode.  The
+ * AVR only has one TWI peripheral/interrupt vector, so only one of
+ * these can be linked into the sketch - combining both makes avr-gcc's
+ * linker fail with "multiple definition of `__vector_36'".
+ *
+ * The LSM6DS33 sits on the same physical SDA/SCL pins used for the
+ * RPi I2C connection, so instead of routing IMU data through this
+ * firmware, have the Raspberry Pi read the LSM6DS33 directly as a
+ * second I2C device on that same bus (its default address is 0x6A or
+ * 0x6B, distinct from this board's slave address of 20 / 0x14), e.g.
+ * with smbus2 in Python.  That avoids the TWI conflict entirely.
  */
 
 // Custom data structure that we will use for interpreting the buffer.
@@ -39,14 +54,6 @@ struct Data
   char notes[14];
 
   int16_t leftEncoder, rightEncoder;
-
-  // Raw IMU readings (LSM6DS33 on the Romi 32U4 Control Board).
-  // accel is in units of milli-g (scale depends on the configured
-  // full-scale range; default enableDefault() range is +-2 g,
-  // 0.061 mg/LSB).  gyro is in units of milli-dps (default
-  // enableDefault() range is +-245 dps, 8.75 mdps/LSB).
-  int16_t accel[3];
-  int16_t gyro[3];
 };
 
 PololuRPiSlave<struct Data,5> slave;
@@ -56,24 +63,11 @@ Romi32U4ButtonA buttonA;
 Romi32U4ButtonB buttonB;
 Romi32U4ButtonC buttonC;
 Romi32U4Encoders encoders;
-LSM6 imu;
-bool imuDetected = false;
 
 void setup()
 {
   // Set up the slave at I2C address 20.
   slave.init(20);
-
-  // Initialize the onboard LSM6DS33 accelerometer/gyro.  This uses the
-  // AVR's hardware I2C (Wire) as master, which is independent of the
-  // software I2C slave interface used to talk to the Raspberry Pi, so
-  // both can run at the same time.
-  Wire.begin();
-  imuDetected = imu.init();
-  if (imuDetected)
-  {
-    imu.enableDefault();
-  }
 
   // Play startup sound.
   buzzer.play("v10>>g16>>>c16");
@@ -121,17 +115,6 @@ void loop()
 
   slave.buffer.leftEncoder = encoders.getCountsLeft();
   slave.buffer.rightEncoder = encoders.getCountsRight();
-
-  if (imuDetected)
-  {
-    imu.read();
-    slave.buffer.accel[0] = imu.a.x;
-    slave.buffer.accel[1] = imu.a.y;
-    slave.buffer.accel[2] = imu.a.z;
-    slave.buffer.gyro[0] = imu.g.x;
-    slave.buffer.gyro[1] = imu.g.y;
-    slave.buffer.gyro[2] = imu.g.z;
-  }
 
   // When you are done WRITING, call finalizeWrites() to make modified
   // data available to I2C master.

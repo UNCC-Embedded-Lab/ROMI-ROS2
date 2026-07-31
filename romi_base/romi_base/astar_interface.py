@@ -49,13 +49,6 @@ class AStarInterface:
   def read_encoders(self):
     return self.read_unpack(39, 4, 'hh')
 
-  def read_imu(self):
-    # Returns raw (accelX, accelY, accelZ, gyroX, gyroY, gyroZ) readings
-    # from the onboard LSM6DS33, in the same units the firmware stores
-    # them in (raw LSB counts). See RomiRPiSlaveDemo.ino for the struct
-    # layout this offset corresponds to.
-    return self.read_unpack(43, 12, 'hhhhhh')
-
   def test_read8(self):
     self.read_unpack(0, 8, 'cccccccc')
 

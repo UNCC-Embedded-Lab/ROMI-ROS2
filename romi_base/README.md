@@ -2,7 +2,8 @@
 
 This package provides a beginner-friendly runtime stack for a Pololu ROMI robot using ROS 2.
 
-- `astar_bridge`: hardware bridge to the AStar motor controller
+- `astar_bridge`: hardware bridge to the AStar motor controller; also reads the onboard
+  LSM6DS33 accelerometer/gyro directly over I2C and publishes it to `/imu/data_raw`
 - `base_controller`: combined kinematics + PI wheel control + odometry + TF
 - `teleop_twist_keyboard`: keyboard command source (`/cmd_vel`)
 - `obstacle_avoidance`: reactive obstacle avoidance using `/scan` from RPLidar
@@ -35,8 +36,14 @@ If your ROMI control board is not already flashed:
 1. Install Arduino IDE.
 2. Add Pololu board manager URL in Arduino IDE:
    `https://files.pololu.com/arduino/package_pololu_index.json`
-3. Install `Pololu A-Star Boards`, `Romi32U4` library, and `LSM6` library
-   (the LSM6 library is required to read the onboard accelerometer/gyro).
+3. Install `Pololu A-Star Boards` and `Romi32U4` library.
+   Do **not** install the `LSM6` library or add `#include <Wire.h>`/`#include <LSM6.h>`
+   to the sketch: `PololuRPiSlave`'s TWI slave interrupt and the standard `Wire`
+   library's TWI master interrupt both need the AVR's single TWI interrupt vector,
+   so linking both into the sketch fails with "multiple definition of `__vector_36`".
+   The onboard LSM6DS33 accelerometer/gyro is instead read directly by the Raspberry
+   Pi over the same I2C bus (see `astar_bridge_node`/`lsm6_interface.py`), not through
+   the firmware.
 4. Open and upload:
    `lab_assets/arduino/RomiRPiSlaveDemo/RomiRPiSlaveDemo.ino`
 
@@ -283,7 +290,7 @@ Pre-built 2D occupancy-grid maps for use with AMCL (`nav2_map_server`).
 `config/romi_params.yaml` contains:
 
 - ROMI geometry and control gains (`base_controller_node`)
-- encoder polling rate (`astar_bridge_node`)
+- encoder and IMU polling rates, and IMU frame ID (`astar_bridge_node`)
 - obstacle behavior thresholds (`obstacle_avoidance_node`)
 
 `config/amcl_params.yaml` contains:
