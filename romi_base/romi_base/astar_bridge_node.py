@@ -5,6 +5,7 @@ from rclpy.node import Node
 from std_msgs.msg import Int16MultiArray, Int32MultiArray
 from sensor_msgs.msg import Imu
 from .astar_interface import AStarInterface
+from .lsm6_interface import Lsm6Interface
 
 # LSM6DS33 default enableDefault() sensitivities (see lsm6-arduino library):
 #   accel: +-2 g full scale  -> 0.061 mg/LSB
@@ -22,6 +23,16 @@ class AStarBridgeNode(Node):
         
         # Initialize the hardware interface
         self.romi = AStarInterface()
+
+        # The LSM6DS33 is read directly over I2C at its own address
+        # (it is not relayed through the AVR's slave buffer - see the
+        # note in RomiRPiSlaveDemo.ino and lsm6_interface.py).
+        self.imu = Lsm6Interface()
+        self.imu_detected = self.imu.init()
+        if self.imu_detected:
+            self.imu.enable_default()
+        else:
+            self.get_logger().warn("LSM6DS33 not detected; /imu/data_raw will not be published.")
 
         # Subscribe to LED commands (from Laptop node)
         self.led_subscription = self.create_subscription(
@@ -101,8 +112,11 @@ class AStarBridgeNode(Node):
             self.get_logger().error(f"I2C Encoder Read Error: {e}")
 
     def read_imu(self):
+        if not self.imu_detected:
+            return
+
         try:
-            ax, ay, az, gx, gy, gz = self.romi.read_imu()
+            ax, ay, az, gx, gy, gz = self.imu.read()
 
             msg = Imu()
             msg.header.stamp = self.get_clock().now().to_msg()
