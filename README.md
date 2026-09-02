@@ -49,7 +49,9 @@ If your ROMI control board is not already flashed:
 
 ### Prepare Raspberry Pi
 
-1. Flash a ROS 2-ready image onto the Pi microSD card.
+1. Flash a ROS 2-ready image onto the Pi microSD card. The provided Pi image can be
+   downloaded here:
+   [romiPi20260723.img.xz](https://github.com/UNCC-Embedded-Lab/ROMI-ROS2/releases/download/pi-image/romiPi20260723.img.xz)
 2. Boot the Pi and connect it to your network.
 3. Verify SSH access from your laptop:
 
