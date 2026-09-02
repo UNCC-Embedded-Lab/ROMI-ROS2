@@ -8,6 +8,12 @@ This package provides a beginner-friendly runtime stack for a Pololu ROMI robot 
 - `teleop_twist_keyboard`: keyboard command source (`/cmd_vel`)
 - `obstacle_avoidance`: reactive obstacle avoidance using `/scan` from RPLidar
 
+> **New to this project?** Start with the beginner-friendly, step-by-step
+> tutorials in [tutorials/](tutorials/README.md):
+> [Linux Setup Guide](tutorials/linux-setup.md) or
+> [Windows Setup Guide](tutorials/windows-setup.md). The rest of this README
+> is a technical reference for once you're up and running.
+
 ## System Overview
 
 - Raspberry Pi 4 runs the ROS 2 robot software.
